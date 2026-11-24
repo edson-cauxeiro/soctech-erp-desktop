@@ -6,12 +6,14 @@
  * verifica permissões e devolve `IpcResponse`.
  */
 
-import { ipcMain } from 'electron';
 import { inventoryController } from '../controllers/inventory.controller';
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerInventoryRouter(): void {
+  const handle = handleLicenciado(['estoque', 'vendas', 'compras']);
   /** Saldo servevel de um artigo, opcionalmente limitado a um armazém. */
-  ipcMain.handle('inventory:consultar-saldo', async (_event, raw) => {
+  handle('inventory:consultar-saldo', async (_event, raw) => {
     try {
       return await inventoryController.consultarSaldo(raw);
     } catch (erro) {
@@ -26,7 +28,7 @@ export function registerInventoryRouter(): void {
   });
 
   /** Stock por localização, com os filtros da TASK-029 e paginação. */
-  ipcMain.handle('inventory:consultar-stock', async (_event, raw) => {
+  handle('inventory:consultar-stock', async (_event, raw) => {
     try {
       return await inventoryController.consultarStock(raw);
     } catch (erro) {

@@ -54,3 +54,10 @@ export type {
   FiltrosMovimento,
   MovimentoCompleto,
 } from './stock-movement.repository';
+
+export { LicensingRepository, licensingRepository } from './licensing.repository';
+export type {
+  LicenseComModulos,
+  ModuloLicencaPersistido,
+  DadosSubstituicaoLicenca,
+} from './licensing.repository';

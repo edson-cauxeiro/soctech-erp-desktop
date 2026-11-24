@@ -7,7 +7,6 @@
  * filtros como objecto; os restantes passam o payload tal qual.
  */
 
-import { ipcMain } from 'electron';
 import { loteController } from '../controllers/lote.controller';
 
 function falha(erro: unknown) {
@@ -25,9 +24,12 @@ function idObrigatorio(id: unknown): string | null {
   return id;
 }
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerLoteRouter(): void {
+  const handle = handleLicenciado('estoque');
   /** Lotes com filtros de artigo, pesquisa e estado de validade. */
-  ipcMain.handle('lotes:list', async (_event, rawFiltros) => {
+  handle('lotes:list', async (_event, rawFiltros) => {
     try {
       return await loteController.list(rawFiltros);
     } catch (erro) {
@@ -36,7 +38,7 @@ export function registerLoteRouter(): void {
   });
 
   /** Um lote por ID. */
-  ipcMain.handle('lotes:get', async (_event, id) => {
+  handle('lotes:get', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID do lote é obrigatório.' } };
@@ -47,7 +49,7 @@ export function registerLoteRouter(): void {
   });
 
   /** Criar lote. O payload é validado pelo Zod dentro do service. */
-  ipcMain.handle('lotes:create', async (_event, raw) => {
+  handle('lotes:create', async (_event, raw) => {
     try {
       return await loteController.create(raw);
     } catch (erro) {
@@ -56,7 +58,7 @@ export function registerLoteRouter(): void {
   });
 
   /** Actualizar lote (artigo é imutável). */
-  ipcMain.handle('lotes:update', async (_event, id, raw) => {
+  handle('lotes:update', async (_event, id, raw) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID do lote é obrigatório.' } };
@@ -67,7 +69,7 @@ export function registerLoteRouter(): void {
   });
 
   /** Eliminar lote sem stock. */
-  ipcMain.handle('lotes:delete', async (_event, id) => {
+  handle('lotes:delete', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID do lote é obrigatório.' } };

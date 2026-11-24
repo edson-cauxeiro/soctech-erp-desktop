@@ -106,8 +106,9 @@ async function autenticar(pagina: Page): Promise<void> {
 }
 
 async function abrirTab(pagina: Page, label: string): Promise<void> {
-  // A navegação de módulos usa <Link> que aparece como texto clicável
-  await pagina.getByText(label, { exact: true }).click();
+  // A navegação de módulos usa <Link>. Procurar apenas por texto é ambíguo:
+  // o mesmo rótulo também aparece nos cartões da página inicial.
+  await pagina.getByRole("link", { name: label, exact: true }).click();
   await pagina.waitForTimeout(500); // transição de aba
 }
 
@@ -125,7 +126,7 @@ async function abrirSalarios(): Promise<void> {
 
 async function configurarPeriodoEAguardar(): Promise<void> {
   // O ano/mês/período já vêm preenchidos com o corrente; só clicar Actualizar
-  await janela.getByRole("button", { name: /actualizar/i }).click();
+  await janela.getByRole("button", { name: "Actualizar", exact: true }).click();
   // Aguarda a grelha carregar (elegíveis > 0 ou mensagem de vazio)
   await expect(janela.getByTestId("rh-processamento-conteudo")).toBeVisible({ timeout: TIMEOUT });
   // Esperar um pouco mais para o carregamento assíncrono
@@ -201,7 +202,7 @@ async function mudarOperacao(operacao: "PROCESSAR" | "ANULAR"): Promise<void> {
 }
 
 async function actualizarEAguardar(): Promise<void> {
-  await janela.getByRole("button", { name: /actualizar/i }).click();
+  await janela.getByRole("button", { name: "Actualizar", exact: true }).click();
   await janela.waitForTimeout(2_000);
 }
 

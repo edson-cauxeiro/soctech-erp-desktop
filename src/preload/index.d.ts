@@ -90,6 +90,15 @@ export interface ErpApi {
     consultarSaldo: (data: unknown) => Promise<IpcResponse<unknown>>;
     consultarStock: (filters?: unknown) => Promise<IpcResponse<unknown>>;
   };
+  licensing: {
+    getStatus: () => Promise<IpcResponse<unknown>>;
+    getModules: () => Promise<IpcResponse<string[]>>;
+    checkModule: (modulo: string) => Promise<IpcResponse<unknown>>;
+    getEvents: (limite?: number) => Promise<IpcResponse<unknown>>;
+    selectFile: () => Promise<IpcResponse<unknown>>;
+    import: (conteudo: string) => Promise<IpcResponse<unknown>>;
+    remove: () => Promise<IpcResponse<boolean>>;
+  };
 }
 
 declare global {

@@ -8,7 +8,7 @@
  * (`rh:config:*`), isolados por empresa através do contexto da sessão.
  */
 
-import { ipcMain, dialog, BrowserWindow } from 'electron';
+import { dialog, BrowserWindow } from 'electron';
 import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { rhHandler } from '../utils/rh-handler';
@@ -185,9 +185,12 @@ export interface RhPingResult {
   timestamp: string;
 }
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerRhRouter(): void {
+  const handle = handleLicenciado('rh');
   // ── Diagnóstico ───────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:sistema:ping',
     rhHandler(pingSchema, { modulo: 'rh', acao: 'read' }, async (_input, ctx) => ({
       modulo: 'rh',
@@ -200,25 +203,25 @@ export function registerRhRouter(): void {
   );
 
   // ── Funcionários (RH-201) ─────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:listar',
     rhHandler(filtroFuncionarioSchema, verFuncionarios, (input, ctx) =>
       rhFuncionarioService.listar(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:get',
     rhHandler(rhIdInputSchema, verFuncionarios, ({ id }, ctx) =>
       rhFuncionarioService.obterDetalhe(id, ctx.empresaId, ctx.podeVerSalarios)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:criar',
     rhHandler(criarRhFuncionarioSchema, criarFuncionario, (input, ctx) =>
       rhFuncionarioService.criar(input, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:atualizar',
     rhHandler(
       rhIdInputSchema.extend(atualizarRhFuncionarioSchema.shape),
@@ -227,7 +230,7 @@ export function registerRhRouter(): void {
         rhFuncionarioService.atualizar(id, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:inativar',
     rhHandler(rhIdInputSchema, inativarFuncionario, ({ id }, ctx) =>
       rhFuncionarioService.inativar(id, ctx.empresaId, ctx.utilizadorId)
@@ -235,7 +238,7 @@ export function registerRhRouter(): void {
   );
 
   // ── Dependentes (RH-203) ──────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:dependentes:criar',
     rhHandler(
       z.object({ funcionarioId: rhIdSchema, ...criarRhDependenteSchema.shape }),
@@ -244,13 +247,13 @@ export function registerRhRouter(): void {
         rhFuncionarioService.criarDependente(funcionarioId, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:dependentes:atualizar',
     rhHandler(rhIdInputSchema.extend(atualizarRhDependenteSchema.shape), editarFuncionario, ({ id, ...dados }, ctx) =>
       rhFuncionarioService.atualizarDependente(id, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:dependentes:remover',
     rhHandler(rhIdInputSchema, editarFuncionario, ({ id }, ctx) =>
       rhFuncionarioService.removerDependente(id, ctx.empresaId, ctx.utilizadorId)
@@ -258,7 +261,7 @@ export function registerRhRouter(): void {
   );
 
   // ── Rubricas fixas do funcionário (RH-203/RH-206) ─────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:rubricas-fixas:criar',
     rhHandler(
       z.object({ funcionarioId: rhIdSchema, ...criarRhFuncionarioRubricaSchema.shape }),
@@ -267,7 +270,7 @@ export function registerRhRouter(): void {
         rhFuncionarioService.criarRubricaFixa(funcionarioId, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:rubricas-fixas:atualizar',
     rhHandler(
       rhIdInputSchema.extend(atualizarRhFuncionarioRubricaSchema.shape),
@@ -276,7 +279,7 @@ export function registerRhRouter(): void {
         rhFuncionarioService.atualizarRubricaFixa(id, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:rubricas-fixas:inativar',
     rhHandler(rhIdInputSchema, editarFuncionario, ({ id }, ctx) =>
       rhFuncionarioService.inativarRubricaFixa(id, ctx.empresaId, ctx.utilizadorId)
@@ -284,7 +287,7 @@ export function registerRhRouter(): void {
   );
 
   // ── Documentos do funcionário (RH-203) ────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:documentos:criar',
     rhHandler(
       z.object({ funcionarioId: rhIdSchema, ...criarRhFuncionarioDocumentoSchema.shape }),
@@ -293,7 +296,7 @@ export function registerRhRouter(): void {
         rhFuncionarioService.criarDocumento(funcionarioId, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:documentos:atualizar',
     rhHandler(
       rhIdInputSchema.extend(atualizarRhFuncionarioDocumentoSchema.shape),
@@ -302,7 +305,7 @@ export function registerRhRouter(): void {
         rhFuncionarioService.atualizarDocumento(id, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:funcionarios:documentos:remover',
     rhHandler(rhIdInputSchema, editarFuncionario, ({ id }, ctx) =>
       rhFuncionarioService.removerDocumento(id, ctx.empresaId, ctx.utilizadorId)
@@ -310,19 +313,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Contratos e alterações salariais (RH-204) ─────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:contratos:listar',
     rhHandler(z.object({ funcionarioId: rhIdSchema }), verContratos, ({ funcionarioId }, ctx) =>
       rhContratosService.listarPorFuncionario(funcionarioId, ctx.empresaId, ctx.podeVerSalarios)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:contratos:get',
     rhHandler(rhIdInputSchema, verContratos, ({ id }, ctx) =>
       rhContratosService.obterContrato(id, ctx.empresaId, ctx.podeVerSalarios)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:contratos:criar',
     rhHandler(
       z.object({ funcionarioId: rhIdSchema, ...rhContratoBaseSchema.shape }),
@@ -331,25 +334,25 @@ export function registerRhRouter(): void {
         rhContratosService.criarContrato(funcionarioId, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:contratos:atualizar',
     rhHandler(rhIdInputSchema.extend(atualizarRhContratoSchema.shape), gerirContratos, ({ id, ...dados }, ctx) =>
       rhContratosService.atualizarContrato(id, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:contratos:cessar',
     rhHandler(rhIdInputSchema.extend(cessarRhContratoSchema.shape), gerirContratos, ({ id, ...dados }, ctx) =>
       rhContratosService.cessarContrato(id, dados, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:contratos:alteracoes:criar',
     rhHandler(criarRhAlteracaoSalarialSchema, gerirContratos, (input, ctx) =>
       rhContratosService.registarAlteracaoSalarial(input, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:contratos:salario-na-data',
     rhHandler(rhSalarioNaDataSchema, verContratos, ({ funcionarioId, data }, ctx) =>
       rhContratosService.salarioNaData(funcionarioId, data, ctx.empresaId, ctx.podeVerSalarios)
@@ -357,7 +360,7 @@ export function registerRhRouter(): void {
   );
 
   // ── Alterações Mensais (RH-401) ──────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:alteracoes-mensais:listar',
     rhHandler(
       z.object({
@@ -372,7 +375,7 @@ export function registerRhRouter(): void {
       (input, ctx) => rhAlteracoesMensaisService.listar(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:alteracoes-mensais:criar',
     rhHandler(
       criarRhAlteracaoMensalSchema,
@@ -381,7 +384,7 @@ export function registerRhRouter(): void {
         rhAlteracoesMensaisService.criar(input, ctx.empresaId, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:alteracoes-mensais:atualizar',
     rhHandler(
       rhIdInputSchema.extend(atualizarRhAlteracaoMensalSchema.shape),
@@ -390,7 +393,7 @@ export function registerRhRouter(): void {
         rhAlteracoesMensaisService.atualizar(id, dados, ctx.empresaId, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:alteracoes-mensais:anular',
     rhHandler(
       z.object({ id: rhIdSchema, motivo: z.string().trim().max(240).optional() }),
@@ -399,7 +402,7 @@ export function registerRhRouter(): void {
         rhAlteracoesMensaisService.anular(id, ctx.empresaId, ctx.utilizadorId, motivo),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:alteracoes-mensais:copiar-mes-anterior',
     rhHandler(copiarAlteracoesMesAnteriorSchema, gerirAlteracoes, (input, ctx) =>
       rhAlteracoesMensaisService.copiarMesAnterior(input, ctx.empresaId, ctx.utilizadorId),
@@ -407,37 +410,37 @@ export function registerRhRouter(): void {
   );
 
   // ── Ausências (RH-601) ─────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:ausencias:listar',
     rhHandler(rhAusenciasListarInputSchema, verAusencias, (input, ctx) =>
       rhAusenciasService.listar(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ausencias:obter',
     rhHandler(rhIdSchema, verAusencias, (input, ctx) =>
       rhAusenciasService.obter(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ausencias:criar',
     rhHandler(criarRhAusenciaSchema, gerirAusencias, (input, ctx) =>
       rhAusenciasService.criar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ausencias:atualizar',
     rhHandler(atualizarRhAusenciaSchema, gerirAusencias, (input, ctx) =>
       rhAusenciasService.atualizar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ausencias:aprovar',
     rhHandler(rhAusenciaAprovarSchema, gerirAusencias, (input, ctx) =>
       rhAusenciasService.aprovar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ausencias:inativar',
     rhHandler(rhIdSchema, gerirAusencias, (input, ctx) =>
       rhAusenciasService.inativar(input, ctx.empresaId, ctx.utilizadorId),
@@ -445,37 +448,37 @@ export function registerRhRouter(): void {
   );
 
   // ── Horas Extra (RH-602) ───────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:horas-extra:listar',
     rhHandler(rhHorasExtraListarInputSchema, verHorasExtra, (input, ctx) =>
       rhHorasExtraService.listar(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:horas-extra:obter',
     rhHandler(rhIdSchema, verHorasExtra, (input, ctx) =>
       rhHorasExtraService.obter(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:horas-extra:criar',
     rhHandler(criarRhHoraExtraSchema, gerirHorasExtra, (input, ctx) =>
       rhHorasExtraService.criar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:horas-extra:atualizar',
     rhHandler(atualizarRhHoraExtraSchema, gerirHorasExtra, (input, ctx) =>
       rhHorasExtraService.atualizar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:horas-extra:aprovar',
     rhHandler(rhHoraExtraAprovarSchema, gerirHorasExtra, (input, ctx) =>
       rhHorasExtraService.aprovar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:horas-extra:inativar',
     rhHandler(rhIdSchema, gerirHorasExtra, (input, ctx) =>
       rhHorasExtraService.inativar(input, ctx.empresaId, ctx.utilizadorId),
@@ -483,13 +486,13 @@ export function registerRhRouter(): void {
   );
 
   // ── Férias: Saldos (RH-603) ───────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:ferias:saldos:listar',
     rhHandler(rhFeriasSaldosListarInputSchema, verFerias, (input, ctx) =>
       rhFeriasService.listarSaldos(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ferias:saldos:atualizar',
     rhHandler(rhFeriasSaldoAtualizarSchema, gerirFerias, (input, ctx) =>
       rhFeriasService.atualizarSaldo(ctx.empresaId, input, ctx.utilizadorId),
@@ -497,37 +500,37 @@ export function registerRhRouter(): void {
   );
 
   // ── Férias: Marcações (RH-603) ────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:ferias:marcacoes:listar',
     rhHandler(rhMarcacoesFeriasListarInputSchema, verFerias, (input, ctx) =>
       rhFeriasService.listarMarcacoes(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ferias:marcacoes:obter',
     rhHandler(rhIdSchema, verFerias, (input, ctx) =>
       rhFeriasService.obterMarcacao(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ferias:marcacoes:criar',
     rhHandler(criarRhMarcacaoFeriasSchema, gerirFerias, (input, ctx) =>
       rhFeriasService.criarMarcacao(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ferias:marcacoes:atualizar',
     rhHandler(atualizarRhMarcacaoFeriasSchema, gerirFerias, (input, ctx) =>
       rhFeriasService.atualizarMarcacao(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ferias:marcacoes:aprovar',
     rhHandler(rhMarcacaoFeriasAprovarSchema, gerirFerias, (input, ctx) =>
       rhFeriasService.aprovarMarcacao(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:ferias:marcacoes:inativar',
     rhHandler(rhIdSchema, gerirFerias, (input, ctx) =>
       rhFeriasService.inativarMarcacao(input, ctx.empresaId, ctx.utilizadorId),
@@ -535,31 +538,31 @@ export function registerRhRouter(): void {
   );
 
   // ── Afetações (RH-605) ─────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:afetacoes:listar',
     rhHandler(rhAfetacoesListarInputSchema, verAfetacoes, (input, ctx) =>
       rhAfetacoesService.listar(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:afetacoes:obter',
     rhHandler(rhIdSchema, verAfetacoes, (input, ctx) =>
       rhAfetacoesService.obter(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:afetacoes:criar',
     rhHandler(criarRhAfetacaoSchema, gerirAfetacoes, (input, ctx) =>
       rhAfetacoesService.criar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:afetacoes:atualizar',
     rhHandler(atualizarRhAfetacaoSchema, gerirAfetacoes, (input, ctx) =>
       rhAfetacoesService.atualizar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:afetacoes:remover',
     rhHandler(z.object({ id: rhIdSchema }), gerirAfetacoes, (input, ctx) =>
       rhAfetacoesService.remover(input.id, ctx.empresaId, ctx.utilizadorId),
@@ -567,49 +570,49 @@ export function registerRhRouter(): void {
   );
 
   // ── Processos de Dívida/Penhora (RH-606) ─────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:listar',
     rhHandler(rhProcessosDividaListarInputSchema, verDividas, (input, ctx) =>
       rhDividasService.listarProcessos(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:obter',
     rhHandler(rhIdSchema, verDividas, (input, ctx) =>
       rhDividasService.obterProcesso(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:criar',
     rhHandler(criarRhProcessoDividaSchema, gerirDividas, (input, ctx) =>
       rhDividasService.criarProcesso(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:atualizar',
     rhHandler(atualizarRhProcessoDividaSchema, gerirDividas, (input, ctx) =>
       rhDividasService.atualizarProcesso(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:gerar-plano',
     rhHandler(rhProcessoDividaGerarPlanoSchema, gerirDividas, (input, ctx) =>
       rhDividasService.gerarPlanoPrestacoes(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:suspender',
     rhHandler(rhProcessoDividaSuspenderSchema, gerirDividas, (input, ctx) =>
       rhDividasService.suspenderProcesso(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:liquidar',
     rhHandler(rhProcessoDividaLiquidarSchema, gerirDividas, (input, ctx) =>
       rhDividasService.liquidarProcesso(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:processos:cancelar',
     rhHandler(z.object({ id: rhIdSchema, motivo: z.string().min(3).max(500) }), gerirDividas, (input, ctx) =>
       rhDividasService.cancelarProcesso(input.id, ctx.empresaId, input.motivo, ctx.utilizadorId),
@@ -617,37 +620,37 @@ export function registerRhRouter(): void {
   );
 
   // ── Prestações de Dívida (RH-606) ────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:dividas:prestacoes:listar',
     rhHandler(rhPrestacoesDividaListarInputSchema, verDividas, (input, ctx) =>
       rhDividasService.listarPrestacoes(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:prestacoes:obter',
     rhHandler(rhIdSchema, verDividas, (input, ctx) =>
       rhDividasService.obterPrestacao(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:prestacoes:atualizar',
     rhHandler(rhPrestacaoDividaAtualizarSchema, gerirDividas, (input, ctx) =>
       rhDividasService.atualizarPrestacao(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:prestacoes:descontar',
     rhHandler(rhPrestacaoDividaDescontarSchema, gerirDividas, (input, ctx) =>
       rhDividasService.descontarPrestacao(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:prestacoes:anular',
     rhHandler(rhPrestacaoDividaAnularSchema, gerirDividas, (input, ctx) =>
       rhDividasService.anularPrestacao(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:dividas:prestacoes:perdoar',
     rhHandler(rhPrestacaoDividaPerdoarSchema, gerirDividas, (input, ctx) =>
       rhDividasService.perdoarPrestacao(ctx.empresaId, input, ctx.utilizadorId),
@@ -655,37 +658,37 @@ export function registerRhRouter(): void {
   );
 
   // ── Retroactivos (RH-608) ───────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:retroativos:listar',
     rhHandler(rhRetroativosListarInputSchema, verRetroativos, (input, ctx) =>
       rhRetroativosService.listar(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:retroativos:obter',
     rhHandler(rhIdSchema, verRetroativos, (input, ctx) =>
       rhRetroativosService.obter(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:retroativos:criar',
     rhHandler(criarRhRetroativoSchema, gerirRetroativos, (input, ctx) =>
       rhRetroativosService.criar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:retroativos:atualizar',
     rhHandler(atualizarRhRetroativoSchema, gerirRetroativos, (input, ctx) =>
       rhRetroativosService.atualizar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:retroativos:aplicar',
     rhHandler(rhRetroativoAplicarSchema, gerirRetroativos, (input, ctx) =>
       rhRetroativosService.aplicar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:retroativos:anular',
     rhHandler(rhRetroativoAnularSchema, gerirRetroativos, (input, ctx) =>
       rhRetroativosService.anular(ctx.empresaId, input, ctx.utilizadorId),
@@ -693,31 +696,31 @@ export function registerRhRouter(): void {
   );
 
   // ── Independentes (RH-701) ──────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:independentes:listar',
     rhHandler(rhIndependentesListarInputSchema, verIndependentes, (input, ctx) =>
       rhIndependentesService.listar(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:independentes:obter',
     rhHandler(rhIdSchema, verIndependentes, (input, ctx) =>
       rhIndependentesService.obter(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:independentes:criar',
     rhHandler(criarRhIndependenteSchema, gerirIndependentes, (input, ctx) =>
       rhIndependentesService.criar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:independentes:atualizar',
     rhHandler(atualizarRhIndependenteSchema, gerirIndependentes, (input, ctx) =>
       rhIndependentesService.atualizar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:independentes:inativar',
     rhHandler(rhIdSchema, gerirIndependentes, (input, ctx) =>
       rhIndependentesService.inativar(input, ctx.empresaId, ctx.utilizadorId),
@@ -725,31 +728,31 @@ export function registerRhRouter(): void {
   );
 
   // ── Atividades (RH-702) ─────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:atividades:listar',
     rhHandler(rhAtividadesListarInputSchema, verAtividades, (input, ctx) =>
       rhAtividadesService.listar(ctx.empresaId, input),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:atividades:obter',
     rhHandler(rhIdSchema, verAtividades, (input, ctx) =>
       rhAtividadesService.obter(input, ctx.empresaId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:atividades:criar',
     rhHandler(criarRhAtividadeSchema, gerirAtividades, (input, ctx) =>
       rhAtividadesService.criar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:atividades:atualizar',
     rhHandler(atualizarRhAtividadeSchema, gerirAtividades, (input, ctx) =>
       rhAtividadesService.atualizar(ctx.empresaId, input, ctx.utilizadorId),
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:atividades:inativar',
     rhHandler(rhIdSchema, gerirAtividades, (input, ctx) =>
       rhAtividadesService.inativar(input, ctx.empresaId, ctx.utilizadorId),
@@ -757,7 +760,7 @@ export function registerRhRouter(): void {
   );
 
   // ── Processamento Loader (RH-403) ──────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:processamento:carregar',
     rhHandler(rhProcessamentoLoaderInputSchema, processarSalarios, (input, ctx) =>
       rhProcessamentoLoaderService.carregar({ ...input, empresaId: ctx.empresaId })
@@ -765,19 +768,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Processamento Simular/Preparar (RH-404) ──────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:processamento:simular',
     rhHandler(rhSimularSalariosInputSchema, simularSalarios, (input, ctx) =>
       rhProcessamentoService.simular({ ...input, empresaId: ctx.empresaId })
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:processamento:preparar',
     rhHandler(rhPrepararSalariosInputSchema, prepararSalarios, (input, ctx) =>
       rhProcessamentoService.preparar({ ...input, empresaId: ctx.empresaId })
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:processamento:processar',
     rhHandler(rhProcessarIndividualInputSchema, processarSalarios, (input, ctx) =>
       rhProcessamentoExecucaoService.processarIndividual({
@@ -789,7 +792,7 @@ export function registerRhRouter(): void {
   );
   // Processamento em lote (RH-406): emite progresso por funcionário no evento
   // `rh:processamento:progresso` enquanto o `invoke` devolve o resultado final.
-  ipcMain.handle('rh:processamento:processar-lote', (event, raw) =>
+  handle('rh:processamento:processar-lote', (event, raw) =>
     rhHandler(rhProcessarLoteInputSchema, processarSalarios, (input, ctx) =>
       rhProcessamentoLoteService.processarLote(
         { ...input, empresaId: ctx.empresaId, utilizadorId: ctx.utilizadorId },
@@ -803,7 +806,7 @@ export function registerRhRouter(): void {
   );
   // Anulação de processamentos (RH-407): reverte os efeitos de cada registo
   // numa transacção própria e devolve o resultado agregado.
-  ipcMain.handle(
+  handle(
     'rh:processamento:anular',
     rhHandler(rhAnularProcessamentosInputSchema, anularProcessamentos, (input, ctx) =>
       rhProcessamentoAnularService.anular({
@@ -815,7 +818,7 @@ export function registerRhRouter(): void {
   );
   // Listagem de processamentos do período (RH-412): alimenta a selecção do
   // ecrã de anulação. Só leitura; a anulação continua em `rh:processamento:anular`.
-  ipcMain.handle(
+  handle(
     'rh:processamento:listar',
     rhHandler(rhProcessamentoListarInputSchema, anularProcessamentos, (input, ctx) =>
       rhProcessamentoListarService.listar({ ...input, empresaId: ctx.empresaId, podeVerSalarios: ctx.podeVerSalarios })
@@ -823,7 +826,7 @@ export function registerRhRouter(): void {
   );
   // Histórico de processamentos efectuados (RH-414): listagem filtrável com
   // paginação, isolada por empresa. Só leitura.
-  ipcMain.handle(
+  handle(
     'rh:processamento:historico',
     rhHandler(rhProcessamentoHistoricoInputSchema, verProcessamento, (input, ctx) =>
       rhProcessamentoHistoricoService.listar({ ...input, empresaId: ctx.empresaId, podeVerSalarios: ctx.podeVerSalarios })
@@ -831,7 +834,7 @@ export function registerRhRouter(): void {
   );
   // Visão detalhada de um processamento (RH-414): cabeçalho, bases, escalão de
   // IRT aplicado e itens por rubrica (RF-PRO-06).
-  ipcMain.handle(
+  handle(
     'rh:processamento:obter',
     rhHandler(rhProcessamentoDetalheInputSchema, verProcessamento, ({ id }, ctx) =>
       rhProcessamentoHistoricoService.detalhar({ empresaId: ctx.empresaId, id, podeVerSalarios: ctx.podeVerSalarios })
@@ -839,19 +842,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Departamentos ─────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:departamentos:listar',
     rhHandler(rhFiltroCadastroSchema, verConfig, (input, ctx) =>
       rhConfiguracaoService.listarDepartamentos(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:departamentos:criar',
     rhHandler(criarRhDepartamentoSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.criarDepartamento(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:departamentos:atualizar',
     rhHandler(
       rhIdInputSchema.extend(criarRhDepartamentoSchema.partial().shape),
@@ -859,7 +862,7 @@ export function registerRhRouter(): void {
       ({ id, ...dados }, ctx) => rhConfiguracaoService.atualizarDepartamento(id, dados, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:departamentos:inativar',
     rhHandler(rhIdInputSchema, editarConfig, ({ id }, ctx) =>
       rhConfiguracaoService.inativarDepartamento(id, ctx.empresaId)
@@ -867,19 +870,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Cargos ────────────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:cargos:listar',
     rhHandler(rhFiltroCadastroSchema, verConfig, (input, ctx) =>
       rhConfiguracaoService.listarCargos(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:cargos:criar',
     rhHandler(criarRhCargoSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.criarCargo(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:cargos:atualizar',
     rhHandler(
       rhIdInputSchema.extend(criarRhCargoSchema.partial().shape),
@@ -887,7 +890,7 @@ export function registerRhRouter(): void {
       ({ id, ...dados }, ctx) => rhConfiguracaoService.atualizarCargo(id, dados, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:cargos:inativar',
     rhHandler(rhIdInputSchema, editarConfig, ({ id }, ctx) =>
       rhConfiguracaoService.inativarCargo(id, ctx.empresaId)
@@ -896,7 +899,7 @@ export function registerRhRouter(): void {
 
   // ── Dados de referência (RH-806) ──────────────────────────────────────────
   // Idempotente: cria departamentos/cargos padrão e os períodos do ano.
-  ipcMain.handle(
+  handle(
     'rh:config:referencia:semear',
     rhHandler(pingSchema, editarConfig, (_input, ctx) =>
       rhConfiguracaoService.semearReferencia(ctx.empresaId)
@@ -904,25 +907,25 @@ export function registerRhRouter(): void {
   );
 
   // ── Rubricas ──────────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:rubricas:listar',
     rhHandler(rhFiltroCadastroSchema, verConfig, (input, ctx) =>
       rhConfiguracaoService.listarRubricas(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:rubricas:get',
     rhHandler(rhIdInputSchema, verConfig, ({ id }, ctx) =>
       rhConfiguracaoService.obterRubrica(id, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:rubricas:criar',
     rhHandler(criarRhRubricaSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.criarRubrica(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:rubricas:atualizar',
     rhHandler(
       rhIdInputSchema.extend(criarRhRubricaSchema.partial().shape),
@@ -930,7 +933,7 @@ export function registerRhRouter(): void {
       ({ id, ...dados }, ctx) => rhConfiguracaoService.atualizarRubrica(id, dados, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:rubricas:inativar',
     rhHandler(rhIdInputSchema, editarConfig, ({ id }, ctx) =>
       rhConfiguracaoService.inativarRubrica(id, ctx.empresaId)
@@ -938,19 +941,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Tipos de ausência ─────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:tipos-ausencia:listar',
     rhHandler(rhFiltroCadastroSchema, verConfig, (input, ctx) =>
       rhConfiguracaoService.listarTiposAusencia(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:tipos-ausencia:criar',
     rhHandler(criarRhTipoAusenciaSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.criarTipoAusencia(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:tipos-ausencia:atualizar',
     rhHandler(
       rhIdInputSchema.extend(criarRhTipoAusenciaSchema.partial().shape),
@@ -958,7 +961,7 @@ export function registerRhRouter(): void {
       ({ id, ...dados }, ctx) => rhConfiguracaoService.atualizarTipoAusencia(id, dados, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:tipos-ausencia:inativar',
     rhHandler(rhIdInputSchema, editarConfig, ({ id }, ctx) =>
       rhConfiguracaoService.inativarTipoAusencia(id, ctx.empresaId)
@@ -966,19 +969,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Centros de custo ──────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:centros-custo:listar',
     rhHandler(rhFiltroCadastroSchema, verConfig, (input, ctx) =>
       rhConfiguracaoService.listarCentrosCusto(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:centros-custo:criar',
     rhHandler(criarRhCentroCustoSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.criarCentroCusto(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:centros-custo:atualizar',
     rhHandler(
       rhIdInputSchema.extend(criarRhCentroCustoSchema.partial().shape),
@@ -986,7 +989,7 @@ export function registerRhRouter(): void {
       ({ id, ...dados }, ctx) => rhConfiguracaoService.atualizarCentroCusto(id, dados, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:centros-custo:inativar',
     rhHandler(rhIdInputSchema, editarConfig, ({ id }, ctx) =>
       rhConfiguracaoService.inativarCentroCusto(id, ctx.empresaId)
@@ -994,13 +997,13 @@ export function registerRhRouter(): void {
   );
 
   // ── Parâmetros fiscais (com vigência) ─────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:parametros:listar',
     rhHandler(rhListarParametrosSchema, verConfig, (input, ctx) =>
       rhConfiguracaoService.listarParametros(input, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:parametros:criar',
     rhHandler(criarRhParametroSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.criarParametro(input, ctx.empresaId)
@@ -1008,19 +1011,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Tabela de IRT ─────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:irt:listar',
     rhHandler(pingSchema, verConfig, (_input, ctx) =>
       rhConfiguracaoService.listarTabelasIrt(ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:irt:get',
     rhHandler(rhIdInputSchema, verConfig, ({ id }, ctx) =>
       rhConfiguracaoService.obterTabelaIrt(id, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:irt:criar',
     rhHandler(criarRhTabelaIrtSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.criarTabelaIrt(input, ctx.empresaId)
@@ -1028,25 +1031,25 @@ export function registerRhRouter(): void {
   );
 
   // ── Períodos ──────────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:periodos:listar',
     rhHandler(rhListarPeriodosSchema, verConfig, ({ ano }, ctx) =>
       rhConfiguracaoService.listarPeriodos(ano, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:periodos:gerar',
     rhHandler(gerarRhPeriodosSchema, editarConfig, ({ ano }, ctx) =>
       rhConfiguracaoService.gerarPeriodos(ano, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:periodos:fechar',
     rhHandler(rhIdInputSchema, editarConfig, ({ id }, ctx) =>
       rhConfiguracaoService.fecharPeriodo(id, ctx.empresaId, ctx.utilizadorId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:periodos:reabrir',
     rhHandler(rhIdInputSchema, editarConfig, ({ id }, ctx) =>
       rhConfiguracaoService.reabrirPeriodo(id, ctx.empresaId, ctx.utilizadorId)
@@ -1054,13 +1057,13 @@ export function registerRhRouter(): void {
   );
 
   // ── Configuração singleton ────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:config:configuracao:obter',
     rhHandler(pingSchema, verConfig, (_input, ctx) =>
       rhConfiguracaoService.obterConfiguracao(ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:config:configuracao:atualizar',
     rhHandler(atualizarRhConfiguracaoSchema, editarConfig, (input, ctx) =>
       rhConfiguracaoService.atualizarConfiguracao(input, ctx.empresaId)
@@ -1072,26 +1075,26 @@ export function registerRhRouter(): void {
   const verRecibos = { chave: 'rh.recibos.ver' };
   const emitirRecibos = { chave: 'rh.recibos.emitir' };
 
-  ipcMain.handle(
+  handle(
     'rh:recibos:listar',
     rhHandler(rhRecibosListarInputSchema, verRecibos, (input, ctx) => {
       const { funcionarioId, ...rest } = input;
       return rhRecibosService.listar({ ...rest, funcionarioId: funcionarioId ?? undefined, empresaId: ctx.empresaId, podeVerSalarios: ctx.podeVerSalarios });
     })
   );
-  ipcMain.handle(
+  handle(
     'rh:recibos:obter',
     rhHandler(rhReciboIdInputSchema, verRecibos, ({ id }, ctx) =>
       rhRecibosService.obter(id, ctx.empresaId, ctx.podeVerSalarios)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:recibos:gerarPdf',
     rhHandler(rhRecibosGerarPdfInputSchema, emitirRecibos, ({ reciboIds }) =>
       rhRecibosService.gerarPdfLote(reciboIds)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:recibos:registarImpressao',
     rhHandler(rhReciboIdInputSchema, emitirRecibos, ({ id }) =>
       rhRecibosService.registarImpressao(id)
@@ -1103,37 +1106,37 @@ export function registerRhRouter(): void {
   const verPagamentos = { chave: 'rh.pagamentos.ver' } as const;
   const gerirPagamentos = { chave: 'rh.pagamentos.gerir' } as const;
 
-  ipcMain.handle(
+  handle(
     'rh:pagamentos:ordens:listar',
     rhHandler(rhOrdensPagamentoListarInputSchema, verPagamentos, (input, ctx) =>
       rhPagamentosService.listarOrdens({ ...input, empresaId: ctx.empresaId })
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:pagamentos:ordens:criar',
     rhHandler(rhOrdemPagamentoCriarInputSchema, gerirPagamentos, (input, ctx) =>
       rhPagamentosService.criarOrdem({ ...input, empresaId: ctx.empresaId })
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:pagamentos:ordens:obter',
     rhHandler(rhOrdemPagamentoIdInputSchema, verPagamentos, ({ id }, ctx) =>
       rhPagamentosService.obterOrdem(id, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:pagamentos:ordens:gerarFicheiro',
     rhHandler(rhOrdemPagamentoGerarFicheiroInputSchema, gerirPagamentos, ({ id }, ctx) =>
       rhPagamentosService.gerarFicheiroTransferencia(id, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:pagamentos:listar',
     rhHandler(rhPagamentosListarInputSchema, verPagamentos, (input, ctx) =>
       rhPagamentosService.listarPagamentos({ ...input, empresaId: ctx.empresaId })
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:pagamentos:confirmar',
     rhHandler(rhPagamentoConfirmarInputSchema, gerirPagamentos, (input, ctx) =>
       rhPagamentosService.confirmarPagamento({
@@ -1143,7 +1146,7 @@ export function registerRhRouter(): void {
       })
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:pagamentos:estornar',
     rhHandler(rhPagamentoEstornarInputSchema, gerirPagamentos, (input, ctx) =>
       rhPagamentosService.estornarPagamento({
@@ -1157,7 +1160,7 @@ export function registerRhRouter(): void {
   // ── Importação CSV (RH-208) ────────────────────────────────────────────────
   // Canais separados por tipo: o tipo nunca vem do payload nem se decide em
   // cima do conteúdo — vem do próprio canal, e com ele a permissão certa.
-  ipcMain.handle(
+  handle(
     'rh:importacao:selecionar',
     rhHandler(pingSchema, { modulo: 'rh', acao: 'write' }, async (_input, _ctx) => {
       // O `write` coarse cobre tanto `rh.funcionarios.criar` como
@@ -1180,13 +1183,13 @@ export function registerRhRouter(): void {
       return { cancelado: false as const, nome, conteudo };
     })
   );
-  ipcMain.handle(
+  handle(
     'rh:importacao:funcionarios:previsualizar',
     rhHandler(rhConteudoFicheiroSchema, criarFuncionario, ({ nome, conteudo }, ctx) =>
       rhImportacaoService.previsualizar('FUNCIONARIOS', nome, conteudo, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:importacao:funcionarios:importar',
     rhHandler(rhImportarFicheiroSchema, criarFuncionario, ({ nome, conteudo, ignorarInvalidas }, ctx) =>
       rhImportacaoService.importar(
@@ -1199,13 +1202,13 @@ export function registerRhRouter(): void {
       )
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:importacao:contratos:previsualizar',
     rhHandler(rhConteudoFicheiroSchema, gerirContratos, ({ nome, conteudo }, ctx) =>
       rhImportacaoService.previsualizar('CONTRATOS', nome, conteudo, ctx.empresaId)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:importacao:contratos:importar',
     rhHandler(rhImportarFicheiroSchema, gerirContratos, ({ nome, conteudo, ignorarInvalidas }, ctx) =>
       rhImportacaoService.importar(
@@ -1220,19 +1223,19 @@ export function registerRhRouter(): void {
   );
 
   // ── Auditoria (RH-802) ────────────────────────────────────────────────────────
-  ipcMain.handle(
+  handle(
     'rh:auditoria:listar',
     rhHandler(rhAuditoriaListarInputSchema, verAuditoria, (input, ctx) =>
       rhAuditoriaService.listar(ctx.empresaId, input)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:auditoria:por-funcionario',
     rhHandler(rhAuditoriaPorFuncionarioInputSchema, verAuditoria, (input, ctx) =>
       rhAuditoriaService.listarPorFuncionario(ctx.empresaId, input)
     )
   );
-  ipcMain.handle(
+  handle(
     'rh:auditoria:por-processamento',
     rhHandler(rhAuditoriaPorProcessamentoInputSchema, verAuditoria, (input, ctx) =>
       rhAuditoriaService.listarPorProcessamento(ctx.empresaId, input)

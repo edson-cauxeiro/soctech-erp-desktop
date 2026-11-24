@@ -12,6 +12,7 @@ import {
   Trash2,
   AlertCircle,
   ScrollText,
+  KeyRound,
 } from "lucide-react";
 import { ErpShell } from "../components/erp/ErpShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,8 +27,16 @@ import { SerieManager } from "../components/erp/SerieManager";
 import { UtilizadorManager } from "../components/erp/UtilizadorManager";
 import { PerfilManager } from "../components/erp/PerfilManager";
 import { AuditoriaManager } from "../components/erp/AuditoriaManager";
+import { LicenciamentoManager } from "../components/erp/LicenciamentoManager";
 
-type Tab = "empresa" | "exercicio" | "series" | "utilizador" | "perfil" | "auditoria";
+type Tab =
+  | "empresa"
+  | "exercicio"
+  | "series"
+  | "utilizador"
+  | "perfil"
+  | "auditoria"
+  | "licenciamento";
 
 export default function ConfiguracoesPage() {
   const [tab, setTab] = useState<Tab>("empresa");
@@ -36,10 +45,13 @@ export default function ConfiguracoesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [empresaToEdit, setEmpresaToEdit] = useState<EmpresaConfigDto | null>(null);
 
-  const { user } = useAuth();
+  const hasPermission = useAuth((s) => s.hasPermission);
   const navigate = useNavigate();
 
-  const isAdmin = user?.perfilNome === "Administrador" || Boolean(user?.permissoes?.["*"]);
+  // O mesmo critério do RBAC do Main: perfil Administrador, permissão
+  // explícita `configuracoes:admin` ou wildcard. O nome do perfil deixou de
+  // ser a única porta de entrada.
+  const isAdmin = hasPermission("configuracoes", "admin");
 
   const loadEmpresas = useCallback(async () => {
     setIsLoadingEmpresas(true);
@@ -168,6 +180,14 @@ export default function ConfiguracoesPage() {
               icon: <ScrollText className="w-5 h-5" />,
               onClick: () => setTab("auditoria"),
               tabKey: "auditoria",
+            },
+            {
+              // A licença é importada aqui, dentro das configurações. Não
+              // existe painel paralelo nem Entry point fora deste ecrã.
+              label: "Licenciamento",
+              icon: <KeyRound className="w-5 h-5" />,
+              onClick: () => setTab("licenciamento"),
+              tabKey: "licenciamento",
             },
           ],
         },
@@ -403,6 +423,9 @@ export default function ConfiguracoesPage() {
 
       {/* ABA: AUDITORIA (AUD-02) */}
       {tab === "auditoria" && <AuditoriaManager />}
+
+      {/* ABA: LICENCIAMENTO (7.ª aba) */}
+      {tab === "licenciamento" && <LicenciamentoManager />}
     </ErpShell>
   );
 }
@@ -415,5 +438,6 @@ function label(t: Tab) {
     utilizador: "Utilizadores",
     perfil: "Permissões",
     auditoria: "Auditoria",
+    licenciamento: "Licenciamento",
   }[t];
 }

@@ -10,7 +10,6 @@
  */
 
 import { z } from 'zod';
-import { ipcMain } from 'electron';
 import { armazemController } from '../controllers/armazem.controller';
 import { armazemService } from '../services/armazem.service';
 import {
@@ -18,9 +17,12 @@ import {
   updateArmazemSchema,
 } from '../validators/armazem.validator';
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerArmazemRouter(): void {
+  const handle = handleLicenciado('estoque');
   /** Listar armazéns com filtros opcionais (search, tipo, ativo, paginação). */
-  ipcMain.handle('armazens:list', async (_event, rawFilters) => {
+  handle('armazens:list', async (_event, rawFilters) => {
     try {
       // Os filtros vêm raw do renderer; o controller trata a validação interna.
       return armazemController.list(rawFilters);
@@ -37,7 +39,7 @@ export function registerArmazemRouter(): void {
   });
 
   /** Obter um armazém pelo ID. */
-  ipcMain.handle('armazens:get', async (_event, id: string) => {
+  handle('armazens:get', async (_event, id: string) => {
     try {
       if (!id || id.trim() === '') {
         return {
@@ -61,7 +63,7 @@ export function registerArmazemRouter(): void {
   });
 
   /** Criar um novo armazém. */
-  ipcMain.handle('armazens:create', async (_event, rawData) => {
+  handle('armazens:create', async (_event, rawData) => {
     try {
       const data: z.infer<typeof createArmazemSchema> = createArmazemSchema.parse(rawData);
       return armazemController.create(data);
@@ -87,7 +89,7 @@ export function registerArmazemRouter(): void {
   });
 
   /** Atualizar um armazém existente. */
-  ipcMain.handle('armazens:update', async (_event, rawId: string, rawData: unknown) => {
+  handle('armazens:update', async (_event, rawId: string, rawData: unknown) => {
     try {
       const id: string = rawId.trim();
       if (!id) {
@@ -124,7 +126,7 @@ export function registerArmazemRouter(): void {
   });
 
   /** Remover (desativar) um armazém pelo ID. */
-  ipcMain.handle('armazens:delete', async (_event, id: string) => {
+  handle('armazens:delete', async (_event, id: string) => {
     try {
       if (!id || id.trim() === '') {
         return {
@@ -148,7 +150,7 @@ export function registerArmazemRouter(): void {
   });
 
   /** Desativar um armazém (definir como inativo). */
-  ipcMain.handle('armazens:desativar', async (_event, id: string) => {
+  handle('armazens:desativar', async (_event, id: string) => {
     try {
       if (!id || id.trim() === '') {
         return {
@@ -173,7 +175,7 @@ export function registerArmazemRouter(): void {
   });
 
   /** Obter a estrutura de áreas e zones de um armazém. */
-  ipcMain.handle('armazens:estrutura', async (_event, armazemId: string) => {
+  handle('armazens:estrutura', async (_event, armazemId: string) => {
     try {
       const result = await armazemService.listarEstrutura(armazemId);
       return {

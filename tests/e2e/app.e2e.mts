@@ -38,6 +38,10 @@ const VENDEDOR = { login: "ana.marques", senha: "senha123" };
 
 const TIMEOUT = 20_000;
 
+// A licença de desenvolvimento é instalada pelo globalSetup do Playwright.
+// Aqui não é importada de propósito: importá-la depois do primeiro login
+// deixaria o store do Renderer com um estado antigo e esconderia a navegação.
+
 let app: ElectronApplication;
 let janela: Page;
 
@@ -45,6 +49,9 @@ test.beforeAll(async () => {
   app = await electron.launch({ args: [MAIN_BUILD] });
   janela = await app.firstWindow();
   await janela.waitForLoadState("domcontentloaded");
+
+  await autenticar(janela, ADMIN);
+  await terminarSessaoSeEstiverAutenticado();
 });
 
 test.afterAll(async () => {
@@ -227,6 +234,21 @@ test.describe("DoraERP — módulos", () => {
     await expect(janela.getByRole("heading", { name: /configura/i }).first()).toBeVisible({
       timeout: TIMEOUT,
     });
+  });
+});
+
+test.describe("DoraERP — licenciamento", () => {
+  test("mostra a 7.ª aba dentro das configurações", async () => {
+    await autenticar(janela, ADMIN);
+
+    await janela.getByTestId("perfil-menu-trigger").click();
+    await janela.getByRole("menuitem", { name: /configura/i }).click();
+    await janela.getByTestId("ribbon-tab-licenciamento").click();
+
+    await expect(janela.getByTestId("licenciamento")).toBeVisible({ timeout: TIMEOUT });
+    await expect(janela.getByTestId("licenciamento-estado")).toContainText("VALID");
+    await expect(janela.getByTestId("licenciamento-importar")).toBeEnabled();
+    await expect(janela.getByTestId("licenciamento-modulos")).toBeVisible();
   });
 });
 

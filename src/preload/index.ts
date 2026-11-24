@@ -602,6 +602,15 @@ relatorios: {
   documentoPrint: {
     exportPdf: (options: { suggestedFilename: string }) => ipcRenderer.invoke('documentoPrint:exportPdf', options),
   },
+  licensing: {
+    getStatus: () => ipcRenderer.invoke('licensing:getStatus'),
+    getModules: () => ipcRenderer.invoke('licensing:getModules'),
+    checkModule: (modulo: string) => ipcRenderer.invoke('licensing:checkModule', { modulo }),
+    getEvents: (limite = 50) => ipcRenderer.invoke('licensing:getEvents', { limite }),
+    selectFile: () => ipcRenderer.invoke('licensing:selectFile'),
+    import: (conteudo: string) => ipcRenderer.invoke('licensing:import', { conteudo }),
+    remove: () => ipcRenderer.invoke('licensing:remove', {}),
+  },
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

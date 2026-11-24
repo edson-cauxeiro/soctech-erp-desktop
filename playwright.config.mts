@@ -47,6 +47,10 @@ if (!existsSync(MAIN_BUILD) && !process.env.CI) {
 export default defineConfig({
   testDir: './tests/e2e',
   testMatch: '**/*.e2e.mts',
+  // A licença de desenvolvimento é instalada uma vez, antes de qualquer spec.
+  // Sem isto, os módulos comerciais ficariam ocultos numa base de dados limpa
+  // e cada ficheiro dependeria de outro ter importado a licença primeiro.
+  globalSetup: './tests/e2e/licenca.global-setup.mts',
 
   // Um teste E2E que falha deixa a janela do Electron aberta e o processo
   // pendurado. `fullyParallel` com workers limitados mantém o consumo abaixo

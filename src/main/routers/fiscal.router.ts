@@ -10,26 +10,29 @@
 import { ipcMain } from 'electron';
 import { fiscalController } from '../controllers/fiscal.controller';
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerFiscalRouter(): void {
+  const handle = handleLicenciado('fiscal');
   // SAF-T
-  ipcMain.handle('fiscal:saft:gerar', async (_, payload: unknown) => {
+  handle('fiscal:saft:gerar', async (_, payload: unknown) => {
     return fiscalController.gerarSaft(payload);
   });
 
-  ipcMain.handle('fiscal:saft:validar', async (_, payload: unknown) => {
+  handle('fiscal:saft:validar', async (_, payload: unknown) => {
     return fiscalController.validarSaft(payload);
   });
 
   // Conformidade AGT
-  ipcMain.handle('fiscal:agt:gerar', async (_, payload: unknown) => {
+  handle('fiscal:agt:gerar', async (_, payload: unknown) => {
     return fiscalController.gerarAgt(payload);
   });
 
-  ipcMain.handle('fiscal:agt:resposta', async (_, payload: unknown) => {
+  handle('fiscal:agt:resposta', async (_, payload: unknown) => {
     return fiscalController.registarRespostaAgt(payload);
   });
 
-  ipcMain.handle('fiscal:agt:listar', async (_, payload: unknown) => {
+  handle('fiscal:agt:listar', async (_, payload: unknown) => {
     return fiscalController.listarSubmissoes(payload);
   });
 

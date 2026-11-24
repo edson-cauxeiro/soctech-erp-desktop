@@ -9,7 +9,6 @@
  * `second handler` no arranque.
  */
 
-import { ipcMain } from 'electron';
 import { localizacaoController } from '../controllers/localizacao.controller';
 
 /** Resposta padrão quando o handler escapa a invocação do controller. */
@@ -28,9 +27,12 @@ function idObrigatorio(id: unknown): string | null {
   return id;
 }
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerLocalizacaoRouter(): void {
+  const handle = handleLicenciado('estoque');
   /** Localizações de uma zona (`zonaId` é obrigatório no schema de filtros). */
-  ipcMain.handle('localizacoes:list', async (_event, rawFilters) => {
+  handle('localizacoes:list', async (_event, rawFilters) => {
     try {
       return await localizacaoController.list(rawFilters);
     } catch (erro) {
@@ -39,7 +41,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Uma localização, com zona e área. */
-  ipcMain.handle('localizacoes:get', async (_event, id) => {
+  handle('localizacoes:get', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da localização é obrigatório.' } };
@@ -50,7 +52,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Áreas de um armazém. */
-  ipcMain.handle('localizacoes:areas', async (_event, armazemId) => {
+  handle('localizacoes:areas', async (_event, armazemId) => {
     try {
       const valido = idObrigatorio(armazemId);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID do armazém é obrigatório.' } };
@@ -61,7 +63,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Zonas de uma área. */
-  ipcMain.handle('localizacoes:zonas', async (_event, areaId) => {
+  handle('localizacoes:zonas', async (_event, areaId) => {
     try {
       const valido = idObrigatorio(areaId);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da área é obrigatório.' } };
@@ -72,7 +74,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Árvore `armazém → áreas → zonas → localizações`. */
-  ipcMain.handle('localizacoes:tree', async (_event, armazemId) => {
+  handle('localizacoes:tree', async (_event, armazemId) => {
     try {
       const valido = idObrigatorio(armazemId);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID do armazém é obrigatório.' } };
@@ -83,7 +85,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Criar área. O payload é validado pelo Zod dentro do service. */
-  ipcMain.handle('localizacoes:criar-area', async (_event, raw) => {
+  handle('localizacoes:criar-area', async (_event, raw) => {
     try {
       return await localizacaoController.criarArea(raw);
     } catch (erro) {
@@ -92,7 +94,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Criar zona numa área. */
-  ipcMain.handle('localizacoes:criar-zona', async (_event, raw) => {
+  handle('localizacoes:criar-zona', async (_event, raw) => {
     try {
       return await localizacaoController.criarZona(raw);
     } catch (erro) {
@@ -101,7 +103,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Actualizar uma área (armazém é imutável). */
-  ipcMain.handle('localizacoes:actualizar-area', async (_event, id, raw) => {
+  handle('localizacoes:actualizar-area', async (_event, id, raw) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da área é obrigatório.' } };
@@ -112,7 +114,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Desactivar uma área. */
-  ipcMain.handle('localizacoes:desactivar-area', async (_event, id) => {
+  handle('localizacoes:desactivar-area', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da área é obrigatório.' } };
@@ -123,7 +125,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Actualizar uma zona (área é imutável). */
-  ipcMain.handle('localizacoes:actualizar-zona', async (_event, id, raw) => {
+  handle('localizacoes:actualizar-zona', async (_event, id, raw) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da zona é obrigatório.' } };
@@ -134,7 +136,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Desactivar uma zona. */
-  ipcMain.handle('localizacoes:desactivar-zona', async (_event, id) => {
+  handle('localizacoes:desactivar-zona', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da zona é obrigatório.' } };
@@ -145,7 +147,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Criar localização. O payload é validado pelo Zod dentro do service. */
-  ipcMain.handle('localizacoes:create', async (_event, raw) => {
+  handle('localizacoes:create', async (_event, raw) => {
     try {
       return await localizacaoController.create(raw);
     } catch (erro) {
@@ -154,7 +156,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Actualizar localização. */
-  ipcMain.handle('localizacoes:update', async (_event, id, raw) => {
+  handle('localizacoes:update', async (_event, id, raw) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da localização é obrigatório.' } };
@@ -165,7 +167,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Desactivar localização. */
-  ipcMain.handle('localizacoes:delete', async (_event, id) => {
+  handle('localizacoes:delete', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da localização é obrigatório.' } };
@@ -176,7 +178,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Capacidade declarada vs. quantidade armazenada. */
-  ipcMain.handle('localizacoes:mostrar-capacidade', async (_event, id) => {
+  handle('localizacoes:mostrar-capacidade', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da localização é obrigatório.' } };
@@ -187,7 +189,7 @@ export function registerLocalizacaoRouter(): void {
   });
 
   /** Estado operacional da localização. */
-  ipcMain.handle('localizacoes:mostrar-estado', async (_event, id) => {
+  handle('localizacoes:mostrar-estado', async (_event, id) => {
     try {
       const valido = idObrigatorio(id);
       if (!valido) return { success: false as const, error: { code: 'INVALID_ID', message: 'ID da localização é obrigatório.' } };

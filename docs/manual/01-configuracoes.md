@@ -1,15 +1,17 @@
 # 2. Configurações
 
 Chega-se às Configurações pelo ícone de roda dentada, na barra superior, ou pelo
-item **Configurações do Sistema** no menu do utilizador. Só o perfil Administrador
-entra; qualquer outro perfil vê o ecrã «Acesso Restrito ao Administrador», com
+item **Configurações do Sistema** no menu do utilizador. Entra quem tiver a
+permissão `configuracoes:admin` (o perfil Administrador tem essa permissão);
+qualquer outro perfil vê o ecrã «Acesso Restrito ao Administrador», com
 explicação e um botão **Voltar ao Início**.
 
-O ecrã chama-se **Configurações — Sistema & Empresa** e tem seis abas, em dois
+O ecrã chama-se **Configurações — Sistema & Empresa** e tem sete abas, em dois
 grupos da faixa:
 
 - **Estrutura & Fiscalidade** — **Empresas**, **Exercício**, **Séries**
-- **Utilizadores & Segurança** — **Utilizadores**, **Permissões**, **Auditoria**
+- **Utilizadores & Segurança** — **Utilizadores**, **Permissões**, **Auditoria**,
+  **Licenciamento**
 
 ## Ordem de trabalho numa instalação nova
 
@@ -210,3 +212,57 @@ severidade e a impressão digital. Em cada linha pode **Ver detalhes do registo*
 que abre os dados anteriores e os dados novos, em JSON, para comparação — e
 **Arquivar registo**, um arquivo lógico que não apaga nada. Os registos carregam-se
 por páginas, com o botão **Recarregar** para atualizar.
+
+## Licenciamento
+
+Esta aba gere a licença local da instalação. Não há conta online, servidor de
+licenças nem envio de dados para fora do computador: o ficheiro `.erplic` é
+lido e a assinatura Ed25519 é verificada no processo principal do Electron.
+
+### Consultar o estado
+
+O painel **Estado da licença** mostra um dos estados `MISSING`, `VALID`,
+`NOT_YET_VALID`, `EXPIRED`, `INVALID_SIGNATURE`, `INVALID_FORMAT`,
+`PRODUCT_MISMATCH`, `INSTALLATION_MISMATCH` ou `UNKNOWN_KEY`, com uma mensagem
+clara e sem detalhes criptográficos. Os cartões resumem a situação, o número de
+módulos licenciados, a validade e a última validação local. O identificador da
+instalação aparece quando existe.
+
+A tabela **Módulos da licença** lista os nove módulos reais do ERP. Cada um
+aparece como *Licenciado*, *Não licenciado* ou *Sempre disponível* — é o caso de
+Configurações, que não pode ser bloqueada porque é aqui que a licença se
+importa. **Configurações** continua a exigir a permissão RBAC mesmo sem licença.
+
+**Dados do titular** apresenta o identificador da licença, o cliente, o NIF, o
+produto, as datas de emissão e validade, a chave de assinatura, a vinculação à
+instalação e os limites contratuais. **Histórico de licenciamento** mostra as
+operações registadas no log de auditoria (importação, rejeição, revalidação e
+remoção).
+
+### Importar uma licença
+
+1. Carregue em **Importar licença**. O sistema abre o diálogo nativo, filtrado
+   por ficheiros `.erplic`.
+2. O ficheiro é lido e validado antes de qualquer alteração. A janela
+   **Confirmar importação de licença** mostra o estado, os dados do titular e
+   os módulos incluídos.
+3. Se já existir uma licença instalada, a janela avisa que ela será
+   substituída. Carregue em **Confirmar importação** apenas depois de conferir
+   os módulos.
+4. Se a validação falhar, a importação é recusada e a licença anterior
+   permanece intacta.
+
+A licença é gravada localmente no PostgreSQL já usado pelo ERP. A assinatura é
+revalidada a cada arranque e a cada consulta: alterar a base de dados à mão não
+produz uma licença válida.
+
+### Remover uma licença
+
+**Remover** pede confirmação explícita. Só a licença é apagada: nenhum dado de
+negócio é eliminado ou bloqueado. Depois da remoção, os módulos comerciais
+deixam de aparecer no menu e as operações protegidas são recusadas no Main;
+o início, o login, as configurações e a própria consulta de licenciamento
+continuam disponíveis.
+
+O processo de emissão pelo fornecedor está descrito em
+`docs/licenca-docs/EMISSAO-LICENCAS.md`.

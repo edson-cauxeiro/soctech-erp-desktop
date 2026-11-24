@@ -3,35 +3,37 @@
  * @description Registo de canais IPC para Guia de Entrega (GR).
  */
 
-import { ipcMain } from 'electron';
 import { guiaEntregaController } from '../controllers/guia-entrega.controller';
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerGuiaEntregaRouter(): void {
-  ipcMain.handle('guiasEntrega:list', async (_, filters) => {
+  const handle = handleLicenciado('vendas');
+  handle('guiasEntrega:list', async (_, filters) => {
     return guiaEntregaController.list(filters);
   });
 
-  ipcMain.handle('guiasEntrega:get', async (_, id: string) => {
+  handle('guiasEntrega:get', async (_, id: string) => {
     return guiaEntregaController.get(id);
   });
 
-  ipcMain.handle('guiasEntrega:criar', async (_, data) => {
+  handle('guiasEntrega:criar', async (_, data) => {
     return guiaEntregaController.criar(data);
   });
 
-  ipcMain.handle('guiasEntrega:confirmar', async (_, id: string) => {
+  handle('guiasEntrega:confirmar', async (_, id: string) => {
     return guiaEntregaController.confirmar(id);
   });
 
-  ipcMain.handle('guiasEntrega:faturar', async (_, id: string, payload: { serie: string }) => {
+  handle('guiasEntrega:faturar', async (_, id: string, payload: { serie: string }) => {
     return guiaEntregaController.faturar(id, payload);
   });
 
-  ipcMain.handle('guiasEntrega:anular', async (_, id: string, motivo: string) => {
+  handle('guiasEntrega:anular', async (_, id: string, motivo: string) => {
     return guiaEntregaController.anular(id, motivo);
   });
 
-  ipcMain.handle('guiasEntrega:getDocumentoImprimivel', async (_, id: string) => {
+  handle('guiasEntrega:getDocumentoImprimivel', async (_, id: string) => {
     return guiaEntregaController.getDocumentoImprimivel(id);
   });
 }

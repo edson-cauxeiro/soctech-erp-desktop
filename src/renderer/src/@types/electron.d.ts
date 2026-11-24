@@ -1,4 +1,10 @@
 import { type ElectronAPI } from '@electron-toolkit/preload';
+import type {
+  ImportLicenseResult,
+  LicensePreviewResult,
+  LicenseStatusResult,
+  ModuleAccessResult,
+} from '../../../shared/licensing/types';
 
 export interface UserSessionDto {
   id: string;
@@ -4765,6 +4771,22 @@ export interface ErpApi {
   };
   documentoPrint: {
     exportPdf: (options: { suggestedFilename: string }) => Promise<IpcResponse<{ success: boolean; canceled?: boolean; filePath?: string }>>;
+  };
+  licensing: {
+    getStatus: () => Promise<IpcResponse<LicenseStatusResult>>;
+    getModules: () => Promise<IpcResponse<string[]>>;
+    checkModule: (modulo: string) => Promise<IpcResponse<ModuleAccessResult>>;
+    getEvents: (limite?: number) => Promise<IpcResponse<unknown>>;
+    selectFile: () => Promise<
+      IpcResponse<{
+        cancelado: boolean;
+        nome?: string;
+        conteudo?: string;
+        previsualizacao?: LicensePreviewResult;
+      }>
+    >;
+    import: (conteudo: string) => Promise<IpcResponse<ImportLicenseResult>>;
+    remove: () => Promise<IpcResponse<boolean>>;
   };
   rh: {
     /** Canal de diagnóstico da Fase 0 (exige `rh: read`). */

@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -11,6 +11,7 @@ import {
 import type { ModuleKey } from "@/config/modules";
 import { MODULES, getModuleLabel } from "@/config/modules";
 import { useAuth } from "@/hooks/useAuth";
+import { useLicensing } from "@/hooks/useLicensing";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -57,7 +58,7 @@ export function ErpShell({ active, activeTab, title, ribbon, breadcrumb, childre
 
 function TopBar({ active }: { active: ModuleKey }) {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
 
   const userInitials = user?.nomeCompleto
     ? user.nomeCompleto
@@ -72,7 +73,7 @@ function TopBar({ active }: { active: ModuleKey }) {
   const userName = user?.nomeCompleto || user?.login || "Utilizador";
 
   const handleOpenSettings = () => {
-    if (user?.perfilNome === "Administrador" || user?.permissoes?.["*"]) {
+    if (hasPermission("configuracoes", "admin")) {
       navigate("/configuracoes");
     } else {
       toast.error("Acesso restrito", {
@@ -155,7 +156,7 @@ function TopBar({ active }: { active: ModuleKey }) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {user?.perfilNome === "Administrador" && (
+              {hasPermission("configuracoes", "admin") && (
                 <DropdownMenuItem onClick={() => navigate("/configuracoes")} className="cursor-pointer">
                   <SettingsIcon className="w-4 h-4 mr-2" />
                   Configurações do Sistema
@@ -180,8 +181,23 @@ function TopBar({ active }: { active: ModuleKey }) {
 }
 
 function ModuleNavigation({ active }: { active: ModuleKey }) {
-  const { hasPermission } = useAuth();
-  const modulosVisiveis = MODULES.filter((m) => m.nav !== false && hasPermission(m.modulo, m.acao));
+  const { hasPermission, user } = useAuth();
+  const carregarLicenca = useLicensing((s) => s.carregar);
+  const licencaCarregada = useLicensing((s) => s.carregado);
+  const podeAcessarModulo = useLicensing((s) => s.podeAcessarModulo);
+
+  // A licença é lida uma vez por sessão. A página de Licenciamento actualiza
+  // o mesmo store depois de importar ou remover, sem exigir reinício.
+  useEffect(() => {
+    if (user && !licencaCarregada) void carregarLicenca();
+  }, [user, licencaCarregada, carregarLicenca]);
+
+  const modulosVisiveis = MODULES.filter(
+    (m) =>
+      m.nav !== false &&
+      hasPermission(m.modulo, m.acao) &&
+      podeAcessarModulo(m.modulo)
+  );
 
   return (
     <nav className="px-2 flex items-end gap-0 overflow-x-auto">

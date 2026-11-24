@@ -6,15 +6,17 @@
  * Cada handler valida o payload com Zod antes de chamar o serviço.
  */
 
-import { ipcMain } from 'electron';
 import { putawayService } from '../services/putaway.service';
 import { pickingService } from '../services/picking.service';
 import { authService } from '../services/auth.service';
 import { BusinessRuleError } from '../utils/errors';
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerPuttawayPickingRouter(): void {
+  const handle = handleLicenciado('estoque');
   /** Sugerir localizações disponíveis para um artigo numa dada zona. */
-  ipcMain.handle('putaway:sugerir', async (_event, raw) => {
+  handle('putaway:sugerir', async (_event, raw) => {
     try {
       const result = await putawayService.sugerirLocalizacao(raw);
       return {
@@ -42,7 +44,7 @@ export function registerPuttawayPickingRouter(): void {
   });
 
   /** Executar a colocação de stock para uma localização escolhida. */
-  ipcMain.handle('putaway:executar', async (_event, { artigoId, zonaId, localizacaoId, quantidade }) => {
+  handle('putaway:executar', async (_event, { artigoId, zonaId, localizacaoId, quantidade }) => {
     try {
       const sessao = authService.getCurrentSession();
       await putawayService.executarPutaway(
@@ -77,7 +79,7 @@ export function registerPuttawayPickingRouter(): void {
   });
 
   /** Listar posições de stock elegíveis para picking. */
-  ipcMain.handle('picking:listar-elegiveis', async (_event, raw) => {
+  handle('picking:listar-elegiveis', async (_event, raw) => {
     try {
       const result = await pickingService.listarElegiveis(raw);
       return {

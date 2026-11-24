@@ -1,0 +1,62 @@
+{
+  "payload": {
+    "schemaVersion": 1,
+    "licenseId": "DEV-E2E-2026",
+    "productId": "ERP_DESKTOP",
+    "customer": {
+      "name": "SOC TECHNO — Ambiente de Teste",
+      "taxNumber": "500000000"
+    },
+    "issuedAt": "2026-11-24T22:06:14.496Z",
+    "notBefore": "2026-11-24T22:06:14.496Z",
+    "expiresAt": "2036-11-21T22:06:14.496Z",
+    "modules": [
+      {
+        "key": "vendas",
+        "enabled": true
+      },
+      {
+        "key": "compras",
+        "enabled": true
+      },
+      {
+        "key": "estoque",
+        "enabled": true
+      },
+      {
+        "key": "comercial",
+        "enabled": true
+      },
+      {
+        "key": "financas",
+        "enabled": true
+      },
+      {
+        "key": "fiscal",
+        "enabled": true
+      },
+      {
+        "key": "rh",
+        "enabled": true
+      },
+      {
+        "key": "relatorios",
+        "enabled": true
+      },
+      {
+        "key": "configuracoes",
+        "enabled": true
+      }
+    ],
+    "limits": {
+      "maxUsers": null,
+      "maxDevices": null
+    },
+    "installation": {
+      "bindingMode": "none",
+      "installationId": null
+    },
+    "keyId": "vendor-ed25519-2026-01"
+  },
+  "signature": "xNBfUXVDDrWDsxud5ZePgktfSlOdfmY5qcpmcH5BY61Y1cRXYApLH2UsY+oolxaJ5GbuAFvB7oFpWOh3kJYtCg=="
+}

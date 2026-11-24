@@ -14,62 +14,65 @@
  *simples e punha nos canais de leitura um parâmetro que não podem usar.
  */
 
-import { ipcMain, BrowserWindow } from 'electron';
+import { BrowserWindow } from 'electron';
 import { relatoriosController } from '../controllers/relatorios.controller';
 
+import { handleLicenciado } from '../utils/licensed-handler';
+
 export function registerRelatoriosRouter(): void {
-  ipcMain.handle('relatorios:completo', (_, payload: unknown) =>
+  const handle = handleLicenciado('relatorios');
+  handle('relatorios:completo', (_, payload: unknown) =>
     relatoriosController.completo(payload),
   );
-  ipcMain.handle('relatorios:resumo', (_, payload: unknown) =>
+  handle('relatorios:resumo', (_, payload: unknown) =>
     relatoriosController.resumoExecutivo(payload),
   );
-  ipcMain.handle('relatorios:vendasPorMes', (_, payload: unknown) =>
+  handle('relatorios:vendasPorMes', (_, payload: unknown) =>
     relatoriosController.vendasPorMes(payload),
   );
-  ipcMain.handle('relatorios:fluxoTesouraria', (_, payload: unknown) =>
+  handle('relatorios:fluxoTesouraria', (_, payload: unknown) =>
     relatoriosController.fluxoTesourariaPorMes(payload),
   );
-  ipcMain.handle('relatorios:topArtigos', (_, payload: unknown) =>
+  handle('relatorios:topArtigos', (_, payload: unknown) =>
     relatoriosController.topArtigos(payload),
   );
-  ipcMain.handle('relatorios:topClientes', (_, payload: unknown) =>
+  handle('relatorios:topClientes', (_, payload: unknown) =>
     relatoriosController.topClientes(payload),
   );
   // `stockBaixo` é um estado actual e não depende do período, por isso não
   // recebe payload.
-  ipcMain.handle('relatorios:stockBaixo', () => relatoriosController.stockBaixo());
-  ipcMain.handle('relatorios:valorizacao', (_, payload: unknown) =>
+  handle('relatorios:stockBaixo', () => relatoriosController.stockBaixo());
+  handle('relatorios:valorizacao', (_, payload: unknown) =>
     relatoriosController.valorizacao(payload),
   );
-  ipcMain.handle('relatorios:ivaPorTaxa', (_, payload: unknown) =>
+  handle('relatorios:ivaPorTaxa', (_, payload: unknown) =>
     relatoriosController.ivaPorTaxa(payload),
   );
 
   // RH-801 novos relatórios
-  ipcMain.handle('relatorios:folhaVencimentos', (_, payload: unknown) =>
+  handle('relatorios:folhaVencimentos', (_, payload: unknown) =>
     relatoriosController.folhaVencimentos(payload),
   );
-  ipcMain.handle('relatorios:resumoIrt', (_, payload: unknown) =>
+  handle('relatorios:resumoIrt', (_, payload: unknown) =>
     relatoriosController.resumoIrt(payload),
   );
-  ipcMain.handle('relatorios:resumoInss', (_, payload: unknown) =>
+  handle('relatorios:resumoInss', (_, payload: unknown) =>
     relatoriosController.resumoInss(payload),
   );
-  ipcMain.handle('relatorios:mapaFerias', (_, payload: unknown) =>
+  handle('relatorios:mapaFerias', (_, payload: unknown) =>
     relatoriosController.mapaFerias(payload),
   );
-  ipcMain.handle('relatorios:mapaAusencias', (_, payload: unknown) =>
+  handle('relatorios:mapaAusencias', (_, payload: unknown) =>
     relatoriosController.mapaAusencias(payload),
   );
-  ipcMain.handle('relatorios:dividasAbertas', (_, payload: unknown) =>
+  handle('relatorios:dividasAbertas', (_, payload: unknown) =>
     relatoriosController.dividasAbertas(payload),
   );
-  ipcMain.handle('relatorios:custoDepartamento', (_, payload: unknown) =>
+  handle('relatorios:custoDepartamento', (_, payload: unknown) =>
     relatoriosController.custoDepartamento(payload),
   );
 
-  ipcMain.handle('relatorios:exportar', (event, payload: unknown) =>
+  handle('relatorios:exportar', (event, payload: unknown) =>
     relatoriosController.exportar(payload, BrowserWindow.fromWebContents(event.sender)),
   );
 }

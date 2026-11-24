@@ -129,6 +129,68 @@ model EmpresaConfig {
   @@map("empresa_config")
 }
 
+// =============================================================================
+// 1.1 LICENCIAMENTO LOCAL (offline-first)
+// =============================================================================
+//
+// O estado `VALID` nunca é gravado como verdade permanente: é derivado da
+// revalidação do documento assinado. `payloadJson` guarda exactamente os bytes
+// canónicos verificados; alterar as colunas-resumo não cria uma licença válida.
+model License {
+  id                String    @id @default(cuid())
+  licenseId         String    @unique @map("license_id")
+  productId         String    @map("product_id")
+  customerName      String    @map("customer_name")
+  customerTaxNumber String?   @map("customer_tax_number")
+  issuedAt          DateTime  @map("issued_at") @db.Timestamptz
+  notBefore         DateTime  @map("not_before") @db.Timestamptz
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz
+  installedAt       DateTime  @default(now()) @map("installed_at") @db.Timestamptz
+  lastValidatedAt   DateTime? @map("last_validated_at") @db.Timestamptz
+  /// JSON canónico do payload assinado. Fonte para revalidar a assinatura.
+  payloadJson       String    @map("payload_json")
+  signature         String
+  keyId             String    @map("key_id")
+  /// `none` ou `installation`; validado no payload assinado, não aqui.
+  bindingMode       String    @map("binding_mode")
+  installationId    String?   @map("installation_id")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  modulos LicensedModule[]
+
+  @@index([keyId])
+  @@index([installationId])
+  @@map("licenses")
+}
+
+/// Módulos concedidos pela licença. São uma projecção do payload assinado:
+/// o serviço volta a derivá-los a cada validação, nunca os usa como autoridade.
+model LicensedModule {
+  id        String  @id @default(cuid())
+  licenseId String  @map("license_id")
+  moduleKey String  @map("module_key")
+  enabled   Boolean @default(true)
+
+  licenca License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  @@unique([licenseId, moduleKey])
+  @@index([moduleKey])
+  @@map("licensed_modules")
+}
+
+/// Identificador global e estável desta instalação do ERP.
+/// `scope` com valor fixo impede a criação acidental de mais do que uma linha.
+model Installation {
+  id             String   @id @default(cuid())
+  scope          String   @unique @default("global")
+  installationId String   @unique @map("installation_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("installations")
+}
+
 model ExercicioFiscal {
   id           String          @id @default(cuid())
   ano          String

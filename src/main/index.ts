@@ -29,7 +29,9 @@ import { registerRegraStockRouter } from './routers/regra-stock.router';
 import { registerLoteRouter } from './routers/lote.router';
 import { registerRhRouter } from './routers/rh.router';
 import { registerConfigRouter } from './routers/config.router';
+import { registerLicensingRouter } from './routers/licensing.router';
 import { armazemService } from './services/armazem.service';
+import { licensingService } from './services/licensing.service';
 import { testDatabaseConnection, disconnectPrisma } from './database/prisma';
 
 function createWindow(): void {
@@ -90,9 +92,14 @@ app.whenReady().then(async () => {
   // Test database connection in background (non-blocking) e garante armazéns
   // padrão do sistema: ARM-01 (Geral, entradas) e ARM-02 (Vendas, baixas)
   testDatabaseConnection()
-    .then(() => armazemService.ensureDefaultArmazens())
+    .then(async () => {
+      await armazemService.ensureDefaultArmazens();
+      // Revalidação offline da licença persistida: não bloqueia a janela e
+      // nunca altera direitos apenas porque uma coluna local foi mexida.
+      await licensingService.revalidarLicencaArmazenada();
+    })
     .then(() => {
-      console.log('Armazéns padrão ARM-01 (Geral) e ARM-02 (Vendas) garantidos.');
+      console.log('Armazéns padrão garantidos e licença persistida revalidada.');
     })
     .catch((err) => {
       console.warn('Base de dados não acessível no arranque:', err.message);
@@ -125,6 +132,7 @@ app.whenReady().then(async () => {
   registerLoteRouter();
   registerRhRouter();
   registerConfigRouter();
+  registerLicensingRouter();
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'));
