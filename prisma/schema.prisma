@@ -1,0 +1,3220 @@
+// =============================================================================
+// SocTechno — Prisma Schema
+// Banco de Dados: PostgreSQL
+// Especificacao: docs/especificacao_tecnica_erp.md
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// 1. CONFIGURACOES DA EMPRESA
+// =============================================================================
+
+enum Pais {
+  PT
+  AO
+  outro
+}
+
+enum RegimeIva {
+  geral
+  simplificado
+  isento
+}
+
+enum SeveridadeAuditoria {
+  info
+  aviso
+  critico
+}
+
+enum TipoAcaoAuditoria {
+  criar
+  actualizar
+  eliminar
+  exportar
+  validar
+  imprimir
+  login
+  logout
+  anular
+  submeter
+  estornar
+  fechar
+  reabrir
+  pagar
+  apurar
+  conciliar
+  desconciliar
+}
+
+enum EstadoSubmissaoAgt {
+  rascunho
+  assinado
+  submetido
+  aceite
+  rejeitado
+}
+
+model EmpresaConfig {
+  id                 String    @id @default(cuid())
+  identificador      String?   @unique
+  nome               String
+  nif                String    @unique
+  endereco           String    @default("")
+  pais               Pais
+  cae                String?
+  regimeIva          RegimeIva @default(geral) @map("regime_iva")
+  regimeIvaTipo      String?   @default("normal_mensal") @map("regime_iva_tipo")
+  motivoIsencao      String?   @map("motivo_isencao")
+  moedaBase          String    @default("AOA") @map("moeda_base")
+  moedaAlternativa   String?   @map("moeda_alternativa")
+  modulosJson        String?   @default("[]") @map("modulos_json")
+  mesInicial         DateTime? @map("mes_inicial") @db.Date
+  mesFinal           DateTime? @map("mes_final") @db.Date
+  anoFiscalInicio    DateTime  @map("ano_fiscal_inicio") @db.Date
+  anoFiscalFim       DateTime  @map("ano_fiscal_fim") @db.Date
+  serieDefault       String?   @map("serie_default")
+  dadosBancarios     String?   @map("dados_bancarios")
+  telefone           String?
+  email              String?
+  logotipoUrl        String?   @map("logotipo_url")
+  /// Dias de antecedência para alerta de caducidade de lotes (default 90 = 3 meses).
+  diasAlertaValidade Int?      @default(90) @map("dias_alerta_validade")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  utilizadores            Utilizador[]
+  exercicios              ExercicioFiscal[]
+  series                  SerieDocumento[]
+  faturasVenda            FaturaVenda[]
+  proformas               ProformaVenda[]
+  guiasEntrega            GuiaEntrega[]
+  recibos                 ReciboVenda[]
+  contasBancarias         ContaBancaria[]
+  sessoesCaixa            SessaoCaixa[]
+  movimentosTesouraria    MovimentoTesouraria[]
+  contasContabeis         ContaContabil[]
+  diariosContabeis        DiarioContabil[]
+  mapeamentosConta        MapeamentoConta[]
+  regrasContabilizacao    RegraContabilizacao[]
+  lancamentosContabeis    LancamentoContabil[]
+  errosIntegracaoContabil ErroIntegracaoContabil[]
+  execucoesFecho          ExecucaoFecho[]
+  apuramentosImposto      ApuramentoImposto[]
+  auditLogs               AuditLog[]
+  submissoesAgt           SubmissaoAgt[]
+  armazens                Armazem[]
+
+  // Recursos Humanos (ADR-009: entidades-mestre scoped por empresa)
+  rhDepartamentos     RhDepartamento[]
+  rhCargos            RhCargo[]
+  rhFuncionarios      RhFuncionario[]
+  rhRubricas          RhRubrica[]
+  rhTiposAusencia     RhTipoAusencia[]
+  rhTabelasIrt        RhTabelaIRT[]
+  rhParametrosFiscais RhParametroFiscal[]
+  rhConfiguracao      RhConfiguracao?
+  rhPeriodos          RhPeriodo[]
+  rhOrdensPagamento   RhOrdemPagamento[]
+  rhIndependentes     RhIndependente[]
+  centrosCusto        CentroCusto[]
+  estruturasRelatorio EstruturaRelatorio[]
+
+  @@map("empresa_config")
+}
+
+model ExercicioFiscal {
+  id           String          @id @default(cuid())
+  ano          String
+  empresaId    String          @map("empresa_id")
+  modulosJson  String          @default("[]") @map("modulos_json")
+  dataInicio   DateTime        @map("data_inicio") @db.Date
+  dataFim      DateTime        @map("data_fim") @db.Date
+  estado       EstadoExercicio @default(aberto)
+  fechadoEm    DateTime?       @map("fechado_em")
+  fechadoPorId String?         @map("fechado_por_id")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  empresa            EmpresaConfig        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  fechadoPor         Utilizador?          @relation("ExercicioFechadoPor", fields: [fechadoPorId], references: [id])
+  periodos           PeriodoContabil[]
+  sequencias         SequenciaDiario[]
+  lancamentos        LancamentoContabil[]
+  execucoesFecho     ExecucaoFecho[]
+  apuramentosImposto ApuramentoImposto[]
+
+  @@unique([empresaId, ano])
+  @@index([empresaId, estado])
+  @@map("exercicios_fiscais")
+}
+
+// Enums de documentos fiscais
+
+enum EstadoDocumentoFiscal {
+  emitido
+  anulado
+}
+
+enum TipoSerieDocumento {
+  FT
+  FR
+  NC
+  ND
+  FP
+  GR
+  RC
+  /// Numeração interna de lançamentos de tesouraria (não é documento fiscal).
+  TS
+  /// Numeração interna de sessões de caixa.
+  SC
+}
+
+enum EstadoProforma {
+  rascunho
+  emitida
+  convertida
+  anulada
+}
+
+enum EstadoGuiaEntrega {
+  rascunho
+  confirmada
+  faturada
+  anulada
+}
+
+model SerieDocumento {
+  id               String              @id @default(cuid())
+  codigo           String
+  descricao        String
+  empresaId        String              @map("empresa_id")
+  tipoDocumento    TipoSerieDocumento? @map("tipo_documento")
+  modulosJson      String              @default("[]") @map("modulos_json")
+  dataInicio       DateTime            @map("data_inicio") @db.Date
+  dataFim          DateTime            @map("data_fim") @db.Date
+  ultimoLancamento Int                 @default(0) @map("ultimo_lancamento")
+  estado           String              @default("ativo")
+  createdAt        DateTime            @default(now()) @map("created_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, tipoDocumento, codigo])
+  @@map("series_documentos")
+}
+
+// =============================================================================
+// 2. UTILIZADORES E PERFIS DE ACESSO (RBAC)
+// =============================================================================
+
+model PerfilAcesso {
+  id             String  @id @default(cuid())
+  nome           String  @unique
+  descricao      String?
+  permissoesJson String  @default("{}") @map("permissoes_json")
+  sistema        Boolean @default(false)
+
+  utilizadores Utilizador[]
+
+  @@map("perfis_acesso")
+}
+
+model Utilizador {
+  id               String           @id @default(cuid())
+  login            String           @unique
+  nomeCompleto     String           @map("nome_completo")
+  email            String           @unique
+  passwordHash     String           @map("password_hash")
+  estado           EstadoUtilizador @default(ativo)
+  perfilId         String           @map("perfil_id")
+  armazemDefaultId String?          @map("armazem_default_id")
+  empresaConfigId  String           @map("empresa_config_id")
+  telefone         String?
+  ultimoAcessoEm   DateTime?        @map("ultimo_acesso_em")
+  criadoEm         DateTime         @default(now()) @map("criado_em")
+  atualizadoEm     DateTime         @updatedAt @map("atualizado_em")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  perfil                      PerfilAcesso             @relation(fields: [perfilId], references: [id])
+  empresaConfig               EmpresaConfig            @relation(fields: [empresaConfigId], references: [id], onDelete: Cascade)
+  armazemPadrao               Armazem?                 @relation("UtilizadorArmazemPadrao", fields: [armazemDefaultId], references: [id])
+  movimentosTesouraria        MovimentoTesouraria[]
+  sessoesAbertura             SessaoCaixa[]            @relation("SessaoAbertura")
+  sessoesFecho                SessaoCaixa[]            @relation("SessaoFecho")
+  exerciciosFechados          ExercicioFiscal[]        @relation("ExercicioFechadoPor")
+  periodosFechados            PeriodoContabil[]        @relation("PeriodoFechadoPor")
+  lancamentosCriados          LancamentoContabil[]     @relation("LancamentoCriadoPor")
+  lancamentosValidados        LancamentoContabil[]     @relation("LancamentoValidadoPor")
+  errosIntegracaoResolvidos   ErroIntegracaoContabil[] @relation("ErroIntegracaoResolvidoPor")
+  execucoesFechoIniciadas     ExecucaoFecho[]          @relation("ExecucaoFechoIniciadoPor")
+  apuramentosImpostoCriados   ApuramentoImposto[]      @relation("ApuramentoCriadoPor")
+  apuramentosImpostoValidados ApuramentoImposto[]      @relation("ApuramentoValidadoPor")
+  apuramentosImpostoPagos     ApuramentoImposto[]      @relation("ApuramentoPagoPor")
+  auditLogs                   AuditLog[]
+  submissoesAgt               SubmissaoAgt[]
+  movimentosStock             MovimentoStock[]
+
+  @@index([empresaConfigId])
+  @@index([perfilId])
+  @@index([estado])
+  @@map("utilizadores")
+}
+
+enum EstadoUtilizador {
+  ativo
+  inativo
+}
+
+// =============================================================================
+// 3. ARTIGOS
+// =============================================================================
+
+enum TipoArtigo {
+  produto_acabado
+  materia_prima
+  produto_intermedio
+  consumivel
+  servico
+}
+
+enum UnidadeArtigo {
+  UN
+  KG
+  L
+  CX
+  M
+  M2 @map("M2")
+  M3 @map("M3")
+}
+
+enum EstadoArtigo {
+  ativo
+  descontinuado
+  inativo
+}
+
+model Artigo {
+  id                    String        @id @default(cuid())
+  codigo                String        @unique
+  descricao             String
+  tipo                  TipoArtigo
+  unidade               UnidadeArtigo
+  familia               String?
+  codigoBarras          String?       @unique @map("codigo_barras")
+  estado                EstadoArtigo  @default(ativo)
+  precoVenda            Decimal       @default(0.0) @map("preco_venda") @db.Decimal(18, 4)
+  taxaIva               Decimal       @default(23.0) @map("taxa_iva") @db.Decimal(5, 2)
+  fatorConversao        Decimal?      @default(1.0) @map("fator_conversao") @db.Decimal(10, 4)
+  stockMinimo           Decimal       @default(0.0) @map("stock_minimo") @db.Decimal(18, 4)
+  stockMaximo           Decimal       @default(0.0) @map("stock_maximo") @db.Decimal(18, 4)
+  pontoEncomenda        Decimal       @default(0.0) @map("ponto_encomenda") @db.Decimal(18, 4)
+  controloLote          Boolean       @default(false) @map("controlo_lote")
+  armazemPadraoId       String?       @map("armazem_padrao_id")
+  precoCustoMedio       Decimal       @default(0.0) @map("preco_custo_medio") @db.Decimal(18, 4)
+  bom                   String?
+  observacoes           String?
+  /// Características de armazenamento que condicionam onde o artigo pode ser
+  /// colocado. Nulo significa "sem classe", o que equivale a `NORMAL`: não
+  /// restringe a escolha de zonas.
+  classeArmazenamentoId String?       @map("classe_armazenamento_id")
+  createdAt             DateTime      @default(now()) @map("created_at")
+
+  linhasFaturaVenda     LinhaFaturaVenda[]
+  movimentosStock       MovimentoStock[]
+  linhasEncomendaCompra LinhaEncomendaCompra[]
+  linhasGuiaRecepcao    LinhaGuiaRecepcao[]
+  linhasFaturaCompra    LinhaFaturaCompra[]
+  linhasInventario      LinhaInventarioContagem[]
+  linhasProforma        LinhaProformaVenda[]
+  linhasGuiaEntrega     LinhaGuiaEntrega[]
+  /// Relação que faltava: `armazem_padrao_id` era uma coluna órfã, sem FOREIGN KEY.
+  armazemPadrao         Armazem?                  @relation("ArtigoArmazemPadrao", fields: [armazemPadraoId], references: [id], onDelete: SetNull)
+  classeArmazenamento   ClasseArmazenamento?      @relation(fields: [classeArmazenamentoId], references: [id], onDelete: SetNull)
+  lotes                 Lote[]
+  estoques              Estoque[]
+
+  @@index([classeArmazenamentoId])
+  @@map("artigos")
+}
+
+// =============================================================================
+// 4. CLIENTES
+// =============================================================================
+
+enum TipoEntidade {
+  particular
+  empresa
+}
+
+enum EstadoCliente {
+  ativo
+  inativo
+  bloqueado
+}
+
+enum RegimeIvaEntidade {
+  geral
+  isento
+  misto
+}
+
+model Cliente {
+  id              String            @id @default(cuid())
+  codigo          String            @unique
+  nome            String
+  nif             String
+  tipo            TipoEntidade
+  endereco        String
+  codigoPostal    String?           @map("codigo_postal")
+  cidade          String?
+  pais            String            @default("Portugal")
+  telefone        String?
+  email           String?
+  condPagamento   String?           @map("cond_pagamento")
+  metodoPagamento String?           @map("metodo_pagamento")
+  limiteCredito   Decimal           @default(0.0) @map("limite_credito") @db.Decimal(18, 2)
+  descontoPadrao  Decimal           @default(0.0) @map("desconto_padrao") @db.Decimal(5, 2)
+  moeda           String            @default("AOA")
+  vendedor        String?
+  estado          EstadoCliente     @default(ativo)
+  regimeIva       RegimeIvaEntidade @default(geral) @map("regime_iva")
+  retencaoFonte   Decimal           @default(0.0) @map("retencao_fonte") @db.Decimal(5, 2)
+  observacoes     String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  faturasVenda FaturaVenda[]
+  recibosVenda ReciboVenda[]
+  proformas    ProformaVenda[]
+  guiasEntrega GuiaEntrega[]
+
+  @@map("clientes")
+}
+
+// =============================================================================
+// 5. FORNECEDORES
+// =============================================================================
+
+enum EstadoFornecedor {
+  ativo
+  bloqueado
+}
+
+model Fornecedor {
+  id               String           @id @default(cuid())
+  codigo           String           @unique
+  nome             String
+  nif              String
+  endereco         String
+  telefone         String?
+  email            String?
+  condPagamento    String?          @map("cond_pagamento")
+  iban             String?
+  prazoEntregaDias Int              @default(0) @map("prazo_entrega_dias")
+  estado           EstadoFornecedor @default(ativo)
+  retencaoFonte    Decimal          @default(0.0) @map("retencao_fonte") @db.Decimal(5, 2)
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  encomendas    EncomendaCompra[]
+  faturasCompra FaturaCompra[]
+  lotes         Lote[]
+
+  @@map("fornecedores")
+}
+
+// =============================================================================
+// 6. FATURAS DE VENDA (FT, FR, NC, ND)
+// =============================================================================
+
+enum TipoDocumentoVenda {
+  fatura
+  fatura_recibo
+  nota_credito
+  nota_debito
+}
+
+enum EstadoPagamento {
+  pago
+  pendente
+  parcial
+  vencido
+}
+
+model FaturaVenda {
+  id                  String                @id @default(cuid())
+  numero              String                @unique
+  serie               String
+  tipo                TipoDocumentoVenda
+  empresaId           String?               @map("empresa_id")
+  estadoDocumento     EstadoDocumentoFiscal @default(emitido) @map("estado_documento")
+  faturaOrigemId      String?               @map("fatura_origem_id")
+  proformaOrigemId    String?               @unique @map("proforma_origem_id")
+  guiaEntregaOrigemId String?               @unique @map("guia_entrega_origem_id")
+  motivoNotaCredito   String?               @map("motivo_nota_credito")
+  motivoAnulacao      String?               @map("motivo_anulacao")
+  anuladaEm           DateTime?             @map("anulada_em")
+  dataEmissao         DateTime              @map("data_emissao") @db.Date
+  dataVencimento      DateTime              @map("data_vencimento") @db.Date
+  clienteId           String                @map("cliente_id")
+  clienteNome         String                @map("cliente_nome")
+  clienteNif          String                @map("cliente_nif")
+  clienteEndereco     String                @map("cliente_endereco")
+  encomendaOrigem     String?               @map("encomenda_origem")
+  motivoIsencao       String?               @map("motivo_isencao")
+  estadoPagamento     EstadoPagamento       @map("estado_pagamento")
+  /// Campos de liquidação. Obrigatórios quando `tipo = fatura_recibo`: uma FR
+  /// é um documento que afirma pagamento, logo o dinheiro tem de entrar numa
+  /// conta real (ver `vendas.service.ts`).
+  meioPagamento       MeioPagamento?        @map("meio_pagamento")
+  contaBancariaId     String?               @map("conta_bancaria_id")
+  dataPagamento       DateTime?             @map("data_pagamento") @db.Date
+  atcud               String?
+  hashAssinatura      String?               @map("hash_assinatura")
+  totalIliquido       Decimal               @map("total_iliquido") @db.Decimal(18, 4)
+  totalIva            Decimal               @map("total_iva") @db.Decimal(18, 4)
+  totalLiquido        Decimal               @map("total_liquido") @db.Decimal(18, 4)
+  createdAt           DateTime              @default(now()) @map("created_at")
+
+  empresa           EmpresaConfig?     @relation(fields: [empresaId], references: [id])
+  cliente           Cliente            @relation(fields: [clienteId], references: [id])
+  contaCredito      ContaBancaria?     @relation("FaturaContaCredito", fields: [contaBancariaId], references: [id])
+  linhas            LinhaFaturaVenda[]
+  imputacoesRecibo  ImputacaoRecibo[]
+  faturaOrigem      FaturaVenda?       @relation("FaturaRetificada", fields: [faturaOrigemId], references: [id])
+  notasCredito      FaturaVenda[]      @relation("FaturaRetificada")
+  proformaOrigem    ProformaVenda?     @relation("ProformaFatura", fields: [proformaOrigemId], references: [id])
+  guiaEntregaOrigem GuiaEntrega?       @relation("GuiaFaturada", fields: [guiaEntregaOrigemId], references: [id])
+
+  @@index([contaBancariaId])
+  @@map("faturas_venda")
+}
+
+model LinhaFaturaVenda {
+  id              String  @id @default(cuid())
+  faturaId        String  @map("fatura_id")
+  artigoId        String  @map("artigo_id")
+  artigoCodigo    String  @map("artigo_codigo")
+  artigoDescricao String  @map("artigo_descricao")
+  artigoUnidade   String  @map("artigo_unidade")
+  quantidade      Decimal @db.Decimal(18, 4)
+  precoUnitario   Decimal @map("preco_unitario") @db.Decimal(18, 4)
+  desconto        Decimal @default(0.0) @db.Decimal(5, 2)
+  taxaIva         Decimal @map("taxa_iva") @db.Decimal(5, 2)
+  motivoIsencao   String? @map("motivo_isencao")
+  totalLinha      Decimal @map("total_linha") @db.Decimal(18, 4)
+
+  fatura FaturaVenda @relation(fields: [faturaId], references: [id], onDelete: Cascade)
+  artigo Artigo      @relation(fields: [artigoId], references: [id])
+
+  @@map("linhas_fatura_venda")
+}
+
+// =============================================================================
+// 7. RECIBOS DE VENDA
+// =============================================================================
+
+enum MeioPagamento {
+  numerario
+  transferencia
+  cheque
+  multicaixa
+}
+
+model ReciboVenda {
+  id              String                @id @default(cuid())
+  numero          String                @unique
+  serie           String                @default("LEGACY")
+  empresaId       String?               @map("empresa_id")
+  estadoDocumento EstadoDocumentoFiscal @default(emitido) @map("estado_documento")
+  data            DateTime              @db.Date
+  clienteId       String                @map("cliente_id")
+  clienteNome     String                @default("") @map("cliente_nome")
+  clienteNif      String                @default("") @map("cliente_nif")
+  clienteEndereco String                @default("") @map("cliente_endereco")
+  meioPagamento   MeioPagamento         @map("meio_pagamento")
+  valorRecebido   Decimal               @map("valor_recebido") @db.Decimal(18, 4)
+  /// Texto livre legado, substituído por `contaBancariaId`. Mantido apenas
+  /// para preservar o histórico já impresso; nunca é lido pelo código.
+  contaBancaria   String?               @map("conta_bancaria")
+  contaBancariaId String?               @map("conta_bancaria_id")
+  sessaoCaixaId   String?               @map("sessao_caixa_id")
+  retencaoFonte   Decimal               @default(0.0) @map("retencao_fonte") @db.Decimal(5, 2)
+  observacoes     String?
+  motivoAnulacao  String?               @map("motivo_anulacao")
+  anuladaEm       DateTime?             @map("anulada_em")
+  createdAt       DateTime              @default(now()) @map("created_at")
+
+  empresa      EmpresaConfig?    @relation(fields: [empresaId], references: [id])
+  cliente      Cliente           @relation(fields: [clienteId], references: [id])
+  contaCredito ContaBancaria?    @relation("ReciboContaCredito", fields: [contaBancariaId], references: [id])
+  sessaoCaixa  SessaoCaixa?      @relation(fields: [sessaoCaixaId], references: [id])
+  imputacoes   ImputacaoRecibo[]
+
+  @@index([contaBancariaId])
+  @@index([sessaoCaixaId])
+  @@map("recibos_venda")
+}
+
+model ImputacaoRecibo {
+  id            String  @id @default(cuid())
+  reciboId      String  @map("recibo_id")
+  faturaId      String  @map("fatura_id")
+  valorImputado Decimal @map("valor_imputado") @db.Decimal(18, 4)
+
+  recibo ReciboVenda @relation(fields: [reciboId], references: [id], onDelete: Cascade)
+  fatura FaturaVenda @relation(fields: [faturaId], references: [id])
+
+  @@map("imputacoes_recibo")
+}
+
+// =============================================================================
+// 7.1 PROFORMA DE VENDA (FP)
+// =============================================================================
+
+model ProformaVenda {
+  id              String         @id @default(cuid())
+  numero          String         @unique
+  serie           String
+  empresaId       String?        @map("empresa_id")
+  dataEmissao     DateTime       @map("data_emissao") @db.Date
+  dataValidade    DateTime       @map("data_validade") @db.Date
+  moeda           String         @default("AOA")
+  clienteId       String         @map("cliente_id")
+  clienteNome     String         @map("cliente_nome")
+  clienteNif      String         @map("cliente_nif")
+  clienteEndereco String         @map("cliente_endereco")
+  encomendaOrigem String?        @map("encomenda_origem")
+  motivoIsencao   String?        @map("motivo_isencao")
+  estado          EstadoProforma @default(rascunho)
+  motivoAnulacao  String?        @map("motivo_anulacao")
+  anuladaEm       DateTime?      @map("anulada_em")
+  totalIliquido   Decimal        @map("total_iliquido") @db.Decimal(18, 4)
+  totalIva        Decimal        @map("total_iva") @db.Decimal(18, 4)
+  totalLiquido    Decimal        @map("total_liquido") @db.Decimal(18, 4)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  empresa     EmpresaConfig?       @relation(fields: [empresaId], references: [id])
+  cliente     Cliente              @relation(fields: [clienteId], references: [id])
+  linhas      LinhaProformaVenda[]
+  guiaEntrega GuiaEntrega?         @relation("ProformaGuia")
+  faturaVenda FaturaVenda?         @relation("ProformaFatura")
+
+  @@map("proformas_venda")
+}
+
+model LinhaProformaVenda {
+  id              String  @id @default(cuid())
+  proformaId      String  @map("proforma_id")
+  artigoId        String  @map("artigo_id")
+  artigoCodigo    String  @map("artigo_codigo")
+  artigoDescricao String  @map("artigo_descricao")
+  artigoUnidade   String  @map("artigo_unidade")
+  quantidade      Decimal @db.Decimal(18, 4)
+  precoUnitario   Decimal @map("preco_unitario") @db.Decimal(18, 4)
+  desconto        Decimal @default(0.0) @db.Decimal(5, 2)
+  taxaIva         Decimal @map("taxa_iva") @db.Decimal(5, 2)
+  motivoIsencao   String? @map("motivo_isencao")
+  totalLinha      Decimal @map("total_linha") @db.Decimal(18, 4)
+
+  proforma ProformaVenda @relation(fields: [proformaId], references: [id], onDelete: Cascade)
+  artigo   Artigo        @relation(fields: [artigoId], references: [id])
+
+  @@map("linhas_proforma_venda")
+}
+
+// =============================================================================
+// 7.2 GUIA DE ENTREGA (GR)
+// =============================================================================
+
+model GuiaEntrega {
+  id                 String            @id @default(cuid())
+  numero             String            @unique
+  serie              String
+  empresaId          String?           @map("empresa_id")
+  data               DateTime          @db.Date
+  clienteId          String            @map("cliente_id")
+  clienteNome        String            @map("cliente_nome")
+  clienteNif         String            @map("cliente_nif")
+  clienteEndereco    String            @map("cliente_endereco")
+  armazemExpedicaoId String            @map("armazem_expedicao_id")
+  armazemDesignacao  String            @map("armazem_designacao")
+  proformaOrigemId   String?           @unique @map("proforma_origem_id")
+  encomendaOrigem    String?           @map("encomenda_origem")
+  localEntrega       String?           @map("local_entrega")
+  transportador      String?
+  observacoes        String?
+  estado             EstadoGuiaEntrega @default(rascunho)
+  motivoAnulacao     String?           @map("motivo_anulacao")
+  anuladaEm          DateTime?         @map("anulada_em")
+  createdAt          DateTime          @default(now()) @map("created_at")
+
+  empresa          EmpresaConfig?     @relation(fields: [empresaId], references: [id])
+  cliente          Cliente            @relation(fields: [clienteId], references: [id])
+  armazemExpedicao Armazem            @relation("ArmazemExpedicaoGuia", fields: [armazemExpedicaoId], references: [id])
+  proformaOrigem   ProformaVenda?     @relation("ProformaGuia", fields: [proformaOrigemId], references: [id])
+  faturaVenda      FaturaVenda?       @relation("GuiaFaturada")
+  linhas           LinhaGuiaEntrega[]
+
+  @@map("guias_entrega")
+}
+
+model LinhaGuiaEntrega {
+  id              String  @id @default(cuid())
+  guiaId          String  @map("guia_id")
+  artigoId        String  @map("artigo_id")
+  artigoCodigo    String  @map("artigo_codigo")
+  artigoDescricao String  @map("artigo_descricao")
+  artigoUnidade   String  @map("artigo_unidade")
+  quantidade      Decimal @db.Decimal(18, 4)
+  lote            String?
+
+  guia   GuiaEntrega @relation(fields: [guiaId], references: [id], onDelete: Cascade)
+  artigo Artigo      @relation(fields: [artigoId], references: [id])
+
+  @@map("linhas_guia_entrega")
+}
+
+// =============================================================================
+// 8. ESTOQUE E ARMAZENS
+// =============================================================================
+
+enum TipoArmazem {
+  materia_prima
+  produto_acabado
+  producao
+  devolucoes
+}
+
+model Armazem {
+  id               String       @id @default(cuid())
+  /// @deprecated Temporariamente único **global**. O alvo é a unicidade por
+  /// empresa (`@@unique([empresaId, codigo])`, abaixo). Este `@unique` só se
+  /// mantém porque `createArmazemSchema` ainda não envia `empresaId` — todos os
+  /// armazéns criados pela app ficam com `empresa_id IS NULL`, e uma restrição
+  /// composta em PostgreSQL trata NULL como distinto de NULL, ou seja admitiria
+  /// vários armazéns com o mesmo `codigo`. Assim que os services enviarem
+  /// `empresaId` (Fase 2), remover este `@unique`.
+  codigo           String
+  designacao       String
+  tipo             TipoArmazem?
+  localizacao      String?
+  descricao        String?
+  /// Uma empresa por armazém, como em `ContaBancaria` e `MovimentoTesouraria`.
+  /// Sem este campo o armazém seria visível a todas as empresas.
+  empresaId        String?      @map("empresa_id")
+  isDefaultVendas  Boolean      @default(false) @map("is_default_vendas")
+  isDefaultCompras Boolean      @default(false) @map("is_default_compras")
+  ativo            Boolean      @default(true)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  empresa               EmpresaConfig?       @relation(fields: [empresaId], references: [id])
+  movimentosOrigem      MovimentoStock[]     @relation("ArmazemOrigem")
+  movimentosDestino     MovimentoStock[]     @relation("ArmazemDestino")
+  encomendasDestino     EncomendaCompra[]    @relation("ArmazemDestinoEncomenda")
+  guiasRecepcao         GuiaRecepcao[]       @relation("ArmazemDestinoRecepcao")
+  inventarios           InventarioContagem[]
+  guiasEntregaExpedicao GuiaEntrega[]        @relation("ArmazemExpedicaoGuia")
+  utilizadoresPadrao    Utilizador[]         @relation("UtilizadorArmazemPadrao")
+  artigosPadrao         Artigo[]             @relation("ArtigoArmazemPadrao")
+  areas                 ArmazemArea[]
+  estoques              Estoque[]
+  regrasPutaway         RegraPutaway[]
+  regrasPicking         RegraPicking[]
+
+  /// Unicidade por empresa, como em `ContaBancaria`. Redundante enquanto o
+  /// `@unique` global em `codigo` existir, mas fica já em posição para o passo
+  /// seguinte da migração ser um simples DROP em vez de uma reescrita.
+  @@unique([empresaId, codigo], map: "armazens_empresa_codigo_key")
+  @@index([empresaId])
+  @@map("armazens")
+}
+
+/// Área operacional do armazém: recepção, armazenamento, quarentena, expedição.
+model ArmazemArea {
+  id         String   @id @default(cuid())
+  armazemId  String   @map("armazem_id")
+  codigo     String
+  designacao String
+  /// Recepção, Armazenamento, Quarentena, Expedição, … Livre para extensibilidade.
+  tipo       String?
+  descricao  String?
+  ativo      Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  armazem Armazem       @relation(fields: [armazemId], references: [id], onDelete: Cascade)
+  zonas   ArmazemZona[]
+
+  @@unique([armazemId, codigo])
+  @@index([armazemId])
+  @@map("armazens_areas")
+}
+
+/// Zona lógica dentro de uma área: pesados, pequenos, alta rotação, refrigerados.
+model ArmazemZona {
+  id                    String   @id @default(cuid())
+  areaId                String   @map("area_id")
+  codigo                String
+  designacao            String
+  descricao             String?
+  /// Zona de alto movimento alimenta a estratégia de picking.
+  altaRotacao           Boolean  @default(false) @map("alta_rotacao")
+  /// Zona exige temperatura controlada (ex.: refrigerados).
+  temperaturaControlada Boolean  @default(false) @map("temperatura_controlada")
+  ativo                 Boolean  @default(true)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+
+  area          ArmazemArea          @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  localizacoes  ArmazemLocalizacao[]
+  regrasPutaway RegraPutaway[]
+  regrasPicking RegraPicking[]
+
+  @@unique([areaId, codigo])
+  @@index([areaId])
+  @@map("armazens_zonas")
+}
+
+enum TipoLocalizacao {
+  /// Endereço sem stock próprio: corredor, rua ou estante.
+  estrutura
+  prateleira
+  nivel
+  posicao
+  /// Zona de recepção ou de carga, onde a mercadoria aguarda palmilhagem.
+  palete
+  /// Contentor reutilizável endereçável.
+  contentor
+}
+
+/// Endereço físico endereçável, com hierarquia (`parentId`) e capacidade.
+model ArmazemLocalizacao {
+  id                   String          @id @default(cuid())
+  zonaId               String          @map("zona_id")
+  /// Localização-pai. `null` na raiz da zona. Permite A01 → R02 → N03 → P04.
+  parentId             String?         @map("parent_id")
+  codigo               String
+  designacao           String?
+  tipo                 TipoLocalizacao @default(estrutura)
+  /// Coordenadas físicas opcionais, para quem imprime etiquetas de prateleira.
+  corredor             String?
+  estante              String?
+  nivel                Int?
+  posicao              Int?
+  /// Capacidade. `null` significa "sem limite declarado" e não "capacidade zero".
+  capacidadeQuantidade Decimal?        @map("capacidade_quantidade") @db.Decimal(18, 4)
+  capacidadePeso       Decimal?        @map("capacidade_peso") @db.Decimal(18, 4)
+  capacidadeVolume     Decimal?        @map("capacidade_volume") @db.Decimal(18, 4)
+  /// `false` impede que a localização receba produtos diferentes.
+  permitirMixProdutos  Boolean         @default(true) @map("permitir_mix_produtos")
+  /// `false` impede que a localização receba lotes diferentes.
+  permitirMixLotes     Boolean         @default(true) @map("permitir_mix_lotes")
+  /// Elegível para picking. Uma zona de quarentena tem isto desligado.
+  isPickable           Boolean         @default(true) @map("is_pickable")
+  /// Elegível para putaway. Uma zona de expedição tem isto desligado.
+  isPutaway            Boolean         @default(true) @map("is_putaway")
+  /// Bloqueio operacional temporário, independente de `ativo`.
+  bloqueada            Boolean         @default(false)
+  ativo                Boolean         @default(true)
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  zona              ArmazemZona          @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+  parent            ArmazemLocalizacao?  @relation("LocalizacaoPai", fields: [parentId], references: [id], onDelete: Cascade)
+  filhos            ArmazemLocalizacao[] @relation("LocalizacaoPai")
+  estoques          Estoque[]
+  movimentosOrigem  MovimentoStock[]     @relation("LocalizacaoOrigemMovimento")
+  movimentosDestino MovimentoStock[]     @relation("LocalizacaoDestinoMovimento")
+
+  @@unique([zonaId, codigo])
+  @@index([zonaId])
+  @@index([parentId])
+  @@index([isPickable, isPutaway])
+  @@map("armazens_localizacoes")
+}
+
+/// Características de armazenamento que condicionam a escolha da zona.
+model ClasseArmazenamento {
+  id                         String   @id @default(cuid())
+  codigo                     String   @unique
+  designacao                 String
+  descricao                  String?
+  /// NORMAL, HEAVY, FRAGILE, REFRIGERATED, HAZARDOUS, FAST_MOVING…
+  exigeTemperaturaControlada Boolean  @default(false) @map("exige_temperatura_controlada")
+  exigeLote                  Boolean  @default(false) @map("exige_lote")
+  exigeNumeroSerie           Boolean  @default(false) @map("exige_numero_serie")
+  exigeDataValidade          Boolean  @default(false) @map("exige_data_validade")
+  maxArmazenamentoPeso       Decimal? @map("max_armazenamento_peso") @db.Decimal(18, 4)
+  maxArmazenamentoVolume     Decimal? @map("max_armazenamento_volume") @db.Decimal(18, 4)
+  ativo                      Boolean  @default(true)
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  artigos       Artigo[]
+  regrasPutaway RegraPutaway[]
+  regrasPicking RegraPicking[]
+
+  @@map("classes_armazenamento")
+}
+
+enum TipoMovimentoStock {
+  entrada
+  saida
+  transferencia
+  ajuste
+  consumo_producao
+  /// Devolução de cliente ou de fornecedor.
+  devolucao
+  /// Mercadoria retida por inspeção; sai do stock disponível para quarentena.
+  quarentena
+  /// Saída da quarentena para o stock disponível.
+  liberacao
+}
+
+model MovimentoStock {
+  id                   String             @id @default(cuid())
+  numero               String             @unique
+  tipo                 TipoMovimentoStock
+  data                 DateTime           @default(now())
+  artigoId             String             @map("artigo_id")
+  quantidade           Decimal            @db.Decimal(18, 4)
+  armazemOrigemId      String?            @map("armazem_origem_id")
+  armazemDestinoId     String?            @map("armazem_destino_id")
+  /// Texto livre legado. Substituído por `loteId`; deixa de ser a fonte da
+  /// verdade e serve apenas para preservar o histórico já registado.
+  lote                 String?
+  /// Lote normalizado, ligado a `lotes`. É este que sustenta o FEFO.
+  loteId               String?            @map("lote_id")
+  /// Endereços físicos. Um movimento por localização não preenche
+  /// `armazemOrigemId`/`armazemDestinoId`: a localização já pertence a uma
+  /// zona, e portanto a um armazém. Os dois níveis são alternativos.
+  localizacaoOrigemId  String?            @map("localizacao_origem_id")
+  localizacaoDestinoId String?            @map("localizacao_destino_id")
+  documentoOrigem      String             @map("documento_origem")
+  /// Tipo e chave do documento que originou o movimento, para rastreabilidade.
+  /// Substituem a pesquisa por texto livre em `documentoOrigem`.
+  documentoTipo        String?            @map("documento_tipo")
+  documentoId          String?            @map("documento_id")
+  /// Quem registou o movimento. Sem isto não há auditoria de stock.
+  criadoPorId          String?            @map("criado_por_id")
+  custoUnitario        Decimal            @default(0.0) @map("custo_unitario") @db.Decimal(18, 4)
+
+  artigo             Artigo              @relation(fields: [artigoId], references: [id])
+  armazemOrigem      Armazem?            @relation("ArmazemOrigem", fields: [armazemOrigemId], references: [id])
+  armazemDestino     Armazem?            @relation("ArmazemDestino", fields: [armazemDestinoId], references: [id])
+  loteNormalizado    Lote?               @relation(fields: [loteId], references: [id], onDelete: SetNull)
+  localizacaoOrigem  ArmazemLocalizacao? @relation("LocalizacaoOrigemMovimento", fields: [localizacaoOrigemId], references: [id])
+  localizacaoDestino ArmazemLocalizacao? @relation("LocalizacaoDestinoMovimento", fields: [localizacaoDestinoId], references: [id])
+  criadoPor          Utilizador?         @relation(fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([artigoId])
+  @@index([armazemOrigemId])
+  @@index([armazemDestinoId])
+  @@index([loteId])
+  @@index([localizacaoOrigemId])
+  @@index([localizacaoDestinoId])
+  @@index([data])
+  @@index([criadoPorId])
+  @@index([documentoTipo, documentoId])
+  @@map("movimentos_stock")
+}
+
+/// Rastreabilidade de lote. Substitui o texto livre que vivia em
+/// `movimentos_stock.lote`, que não permitia FEFO nem válidações.
+model Lote {
+  id           String    @id @default(cuid())
+  artigoId     String    @map("artigo_id")
+  numeroLote   String    @map("numero_lote")
+  dataFabrico  DateTime? @map("data_fabrico") @db.Date
+  /// Base do FEFO: o lote que expira primeiro é servido primeiro.
+  dataValidade DateTime? @map("data_validade") @db.Date
+  fornecedorId String?   @map("fornecedor_id")
+  /// Preço de aquisição do lote. Distingue custo de artigo (PMP) do custo real.
+  precoCusto   Decimal?  @map("preco_custo") @db.Decimal(18, 4)
+  observacoes  String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  artigo     Artigo           @relation(fields: [artigoId], references: [id], onDelete: Cascade)
+  fornecedor Fornecedor?      @relation(fields: [fornecedorId], references: [id], onDelete: SetNull)
+  movimentos MovimentoStock[]
+  estoques   Estoque[]
+
+  @@unique([artigoId, numeroLote])
+  @@index([artigoId])
+  @@index([dataValidade])
+  @@map("lotes")
+}
+
+enum EstadoEstoque {
+  /// Stock normal, disponível para picking.
+  disponivel
+  /// Retido por inspeção. Não é elegível para picking.
+  quarentena
+  /// Bloqueado por divergência de inventário, pelo que não sai sem ajuste.
+  bloqueado
+  esgotado
+}
+
+/// Saldo de stock materializado por artigo, armazém, localização e lote.
+///
+/// Antes desta tabela o saldo era uma `SUM` sobre `movimentos_stock` calculada
+/// em cada consulta. Materializar o saldo é o que torna possíveis as reservas,
+/// o controlo de capacidade e as sugestões de putaway e picking — nada disso
+/// tem onde assentar sem uma linha de saldo. `movimentos_stock` mantém-se o
+/// livro-razão imutável; esta tabela é o estado corrente, mantido na mesma
+/// transacção que o movimento que o justifica.
+model Estoque {
+  id                  String        @id @default(cuid())
+  artigoId            String        @map("artigo_id")
+  armazemId           String        @map("armazem_id")
+  /// Nulo enquanto a empresa não exigir endereçamento físico (ver D4 na
+  /// auditoria): o stock fica a nível de armazém, como antes desta fase.
+  localizacaoId       String?       @map("localizacao_id")
+  /// Nulo para artigos sem controlo de lote.
+  loteId              String?       @map("lote_id")
+  quantidade          Decimal       @default(0.0) @db.Decimal(18, 4)
+  quantidadeReservada Decimal       @default(0.0) @map("quantidade_reservada") @db.Decimal(18, 4)
+  /// Custo unitário do lote nesta posição. O PMP por artigo continua em
+  /// `artigos.preco_custo_medio`; aqui o custo é por posição.
+  custoUnitario       Decimal       @default(0.0) @map("custo_unitario") @db.Decimal(18, 4)
+  estado              EstadoEstoque @default(disponivel)
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  artigo      Artigo              @relation(fields: [artigoId], references: [id])
+  armazem     Armazem             @relation(fields: [armazemId], references: [id])
+  localizacao ArmazemLocalizacao? @relation(fields: [localizacaoId], references: [id], onDelete: Cascade)
+  lote        Lote?               @relation(fields: [loteId], references: [id], onDelete: Cascade)
+
+  @@index([artigoId])
+  @@index([armazemId])
+  @@index([localizacaoId])
+  @@index([loteId])
+  @@index([estado])
+  @@index([artigoId, armazemId])
+  @@map("estoques")
+}
+
+/// Contadores sequenciais por escopo e ano (ex: movimentos `MOV`, putaway
+/// `PUTAWAY`). O incremento é feito com `updateMany` dentro da transacção do
+/// documento, o que o torna atómico entre processos: duas gravações
+/// concorrentes nunca recebem o mesmo número (ver TASK-037).
+model Sequencia {
+  id     String @id @default(cuid())
+  escopo String @map("escopo")
+  ano    Int    @map("ano")
+  valor  Int    @default(0) @map("valor")
+
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([escopo, ano])
+  @@map("sequencias")
+}
+
+/// Onde colocar a mercadoria que entra. Avaliada por ordem de `prioridade`.
+model RegraPutaway {
+  id                    String   @id @default(cuid())
+  armazemId             String   @map("armazem_id")
+  classeArmazenamentoId String?  @map("classe_armazenamento_id")
+  zonaId                String?  @map("zona_id")
+  /// Menor valor wins. Sem isto a ordem de sugestão seria arbitrária.
+  prioridade            Int      @default(100)
+  /// Janela de capacidade da zona exigida pela regra.
+  capacidadeMinima      Decimal? @map("capacidade_minima") @db.Decimal(18, 4)
+  capacidadeMaxima      Decimal? @map("capacidade_maxima") @db.Decimal(18, 4)
+  permitirMixProdutos   Boolean? @map("permitir_mix_produtos")
+  permitirMixLotes      Boolean? @map("permitir_mix_lotes")
+  ativo                 Boolean  @default(true)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+
+  armazem             Armazem              @relation(fields: [armazemId], references: [id], onDelete: Cascade)
+  classeArmazenamento ClasseArmazenamento? @relation(fields: [classeArmazenamentoId], references: [id], onDelete: Cascade)
+  zona                ArmazemZona?         @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+
+  @@index([armazemId, prioridade])
+  @@index([classeArmazenamentoId])
+  @@map("regras_putaway")
+}
+
+enum EstrategiaPicking {
+  /// Mais antigo primeiro, por data de entrada.
+  fifo
+  /// Validade mais próxima primeiro.
+  fefo
+  /// Mais recente primeiro (último a entrar, primeiro a sair).
+  lifo
+  /// Zona mais próxima do ponto de expedição.
+  mais_proximo
+  /// Deixa a escolha ao operador.
+  manual
+}
+
+/// De onde retirar a mercadoria que sai.
+model RegraPicking {
+  id                    String            @id @default(cuid())
+  armazemId             String            @map("armazem_id")
+  classeArmazenamentoId String?           @map("classe_armazenamento_id")
+  zonaId                String?           @map("zona_id")
+  estrategia            EstrategiaPicking @default(fifo)
+  prioridade            Int               @default(100)
+  /// FEFO só é respeitado se a zona exigir validade.
+  respeitarValidade     Boolean           @default(true) @map("respeitar_validade")
+  ativo                 Boolean           @default(true)
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @default(now()) @updatedAt @map("updated_at")
+
+  armazem             Armazem              @relation(fields: [armazemId], references: [id], onDelete: Cascade)
+  classeArmazenamento ClasseArmazenamento? @relation(fields: [classeArmazenamentoId], references: [id], onDelete: Cascade)
+  zona                ArmazemZona?         @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+
+  @@index([armazemId, prioridade])
+  @@index([classeArmazenamentoId])
+  @@map("regras_picking")
+}
+
+// =============================================================================
+// 8.1 COMPRAS
+// =============================================================================
+
+enum EstadoEncomendaCompra {
+  aberta
+  parcial
+  recebida
+  cancelada
+}
+
+model EncomendaCompra {
+  id               String                @id @default(cuid())
+  numero           String                @unique
+  data             DateTime              @db.Date
+  fornecedorId     String                @map("fornecedor_id")
+  dataRecepcao     DateTime?             @map("data_recepcao") @db.Date
+  armazemDestinoId String?               @map("armazem_destino_id")
+  estado           EstadoEncomendaCompra @default(aberta)
+  observacoes      String?
+  totalIliquido    Decimal               @default(0.0) @map("total_iliquido") @db.Decimal(18, 4)
+  totalIva         Decimal               @default(0.0) @map("total_iva") @db.Decimal(18, 4)
+  totalLiquido     Decimal               @default(0.0) @map("total_liquido") @db.Decimal(18, 4)
+  createdAt        DateTime              @default(now()) @map("created_at")
+
+  fornecedor     Fornecedor             @relation(fields: [fornecedorId], references: [id])
+  armazemDestino Armazem?               @relation("ArmazemDestinoEncomenda", fields: [armazemDestinoId], references: [id])
+  linhas         LinhaEncomendaCompra[]
+  guiasRecepcao  GuiaRecepcao[]
+
+  @@map("encomendas_compra")
+}
+
+model LinhaEncomendaCompra {
+  id                 String  @id @default(cuid())
+  encomendaId        String  @map("encomenda_id")
+  artigoId           String  @map("artigo_id")
+  quantidade         Decimal @db.Decimal(18, 4)
+  quantidadeRecebida Decimal @default(0.0) @map("quantidade_recebida") @db.Decimal(18, 4)
+  precoAcordado      Decimal @map("preco_acordado") @db.Decimal(18, 4)
+  taxaIva            Decimal @default(23.0) @map("taxa_iva") @db.Decimal(5, 2)
+  totalLinha         Decimal @default(0.0) @map("total_linha") @db.Decimal(18, 4)
+
+  encomenda EncomendaCompra @relation(fields: [encomendaId], references: [id], onDelete: Cascade)
+  artigo    Artigo          @relation(fields: [artigoId], references: [id])
+
+  @@map("linhas_encomenda_compra")
+}
+
+enum ConformidadeRecepcao {
+  conforme
+  divergente
+}
+
+model GuiaRecepcao {
+  id               String               @id @default(cuid())
+  numero           String               @unique
+  data             DateTime             @db.Date
+  fornecedorId     String?              @map("fornecedor_id")
+  encomendaId      String?              @map("encomenda_id")
+  armazemDestinoId String               @map("armazem_destino_id")
+  conformidade     ConformidadeRecepcao @default(conforme)
+  observacoes      String?
+  estado           String               @default("processado")
+  createdAt        DateTime             @default(now()) @map("created_at")
+
+  encomenda      EncomendaCompra?    @relation(fields: [encomendaId], references: [id])
+  armazemDestino Armazem             @relation("ArmazemDestinoRecepcao", fields: [armazemDestinoId], references: [id])
+  linhas         LinhaGuiaRecepcao[]
+  faturasCompra  FaturaCompra[]
+
+  @@map("guias_recepcao")
+}
+
+model LinhaGuiaRecepcao {
+  id         String    @id @default(cuid())
+  guiaId     String    @map("guia_id")
+  artigoId   String    @map("artigo_id")
+  quantidade Decimal   @db.Decimal(18, 4)
+  precoCusto Decimal   @default(0.0) @map("preco_custo") @db.Decimal(18, 4)
+  lote       String?
+  validade   DateTime? @db.Date
+
+  guia   GuiaRecepcao @relation(fields: [guiaId], references: [id], onDelete: Cascade)
+  artigo Artigo       @relation(fields: [artigoId], references: [id])
+
+  @@map("linhas_guia_recepcao")
+}
+
+model FaturaCompra {
+  id               String          @id @default(cuid())
+  numeroInterno    String          @unique @map("numero_interno")
+  numeroFornecedor String          @map("numero_fornecedor")
+  dataEmissao      DateTime        @map("data_emissao") @db.Date
+  dataVencimento   DateTime        @map("data_vencimento") @db.Date
+  fornecedorId     String          @map("fornecedor_id")
+  guiaRecepcaoId   String?         @map("guia_recepcao_id")
+  estadoPagamento  EstadoPagamento @default(pendente) @map("estado_pagamento")
+  retencaoFonte    Decimal         @default(0.0) @map("retencao_fonte") @db.Decimal(5, 2)
+  totalIliquido    Decimal         @map("total_iliquido") @db.Decimal(18, 4)
+  totalIva         Decimal         @map("total_iva") @db.Decimal(18, 4)
+  totalLiquido     Decimal         @map("total_liquido") @db.Decimal(18, 4)
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  fornecedor   Fornecedor          @relation(fields: [fornecedorId], references: [id])
+  guiaRecepcao GuiaRecepcao?       @relation(fields: [guiaRecepcaoId], references: [id])
+  linhas       LinhaFaturaCompra[]
+
+  @@map("faturas_compra")
+}
+
+model LinhaFaturaCompra {
+  id            String  @id @default(cuid())
+  faturaId      String  @map("fatura_id")
+  artigoId      String  @map("artigo_id")
+  quantidade    Decimal @db.Decimal(18, 4)
+  precoUnitario Decimal @map("preco_unitario") @db.Decimal(18, 4)
+  taxaIva       Decimal @map("taxa_iva") @db.Decimal(5, 2)
+  totalLinha    Decimal @map("total_linha") @db.Decimal(18, 4)
+
+  fatura FaturaCompra @relation(fields: [faturaId], references: [id], onDelete: Cascade)
+  artigo Artigo       @relation(fields: [artigoId], references: [id])
+
+  @@map("linhas_fatura_compra")
+}
+
+// =============================================================================
+// 8.2 INVENTARIO FISICO E RECONCILIACAO
+// =============================================================================
+
+enum EstadoInventario {
+  em_curso
+  fechado
+  cancelado
+}
+
+model InventarioContagem {
+  id          String           @id @default(cuid())
+  numero      String           @unique
+  data        DateTime         @db.Date
+  armazemId   String           @map("armazem_id")
+  estado      EstadoInventario @default(em_curso)
+  responsavel String?
+  observacoes String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  armazem Armazem                   @relation(fields: [armazemId], references: [id])
+  linhas  LinhaInventarioContagem[]
+
+  @@map("inventarios_contagem")
+}
+
+model LinhaInventarioContagem {
+  id           String  @id @default(cuid())
+  inventarioId String  @map("inventario_id")
+  artigoId     String  @map("artigo_id")
+  qtdSistema   Decimal @map("qtd_sistema") @db.Decimal(18, 4)
+  qtdContada   Decimal @map("qtd_contada") @db.Decimal(18, 4)
+  diferenca    Decimal @default(0.0) @db.Decimal(18, 4)
+  lote         String?
+
+  inventario InventarioContagem @relation(fields: [inventarioId], references: [id], onDelete: Cascade)
+  artigo     Artigo             @relation(fields: [artigoId], references: [id])
+
+  @@map("linhas_inventario_contagem")
+}
+
+// =============================================================================
+// 9. TESOURARIA E FINANCAS
+// =============================================================================
+
+enum TipoContaBancaria {
+  banco
+  caixa
+}
+
+/// Entidade que pode originar um movimento de tesouraria. Permite ligar o
+/// lançamento a um documento real em vez de texto livre.
+enum TipoDocumentoTesouraria {
+  manual
+  recibo_venda
+  fatura_venda
+  fatura_compra
+  guia_recepcao
+}
+
+model ContaBancaria {
+  id              String            @id @default(cuid())
+  /// Uma conta pertence sempre a uma empresa. Sem isto, um lançamento sem
+  /// `empresaId` podia mexer no saldo de uma conta de outra empresa.
+  empresaId       String            @map("empresa_id")
+  /// Conta do plano de contas que representa esta conta bancária/caixa na
+  /// contabilidade. Opcional enquanto a empresa não tiver plano de contas
+  /// configurado; a reconciliação contabilística só aparece quando existir.
+  contaContabilId String?           @unique @map("conta_contabil_id")
+  codigo          String
+  designacao      String
+  tipo            TipoContaBancaria
+  nomeBanco       String?           @map("nome_banco")
+  iban            String?
+  swiftBic        String?           @map("swift_bic")
+  saldoInicial    Decimal           @default(0.0) @map("saldo_inicial") @db.Decimal(18, 4)
+  saldoAtual      Decimal           @default(0.0) @map("saldo_atual") @db.Decimal(18, 4)
+  moeda           String            @default("AOA")
+  ativo           Boolean           @default(true)
+  observacoes     String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  empresa           EmpresaConfig         @relation(fields: [empresaId], references: [id])
+  contaContabil     ContaContabil?        @relation(fields: [contaContabilId], references: [id])
+  movimentosOrigem  MovimentoTesouraria[] @relation("ContaOrigem")
+  movimentosDestino MovimentoTesouraria[] @relation("ContaDestino")
+  sessoes           SessaoCaixa[]
+  recibos           ReciboVenda[]         @relation("ReciboContaCredito")
+  faturas           FaturaVenda[]         @relation("FaturaContaCredito")
+
+  @@unique([empresaId, codigo], map: "contas_bancarias_empresa_codigo_key")
+  @@index([empresaId, ativo])
+  @@map("contas_bancarias")
+}
+
+enum TipoMovimentoTesouraria {
+  /// Dinheiro entra na conta de destino.
+  entrada
+  /// Dinheiro sai da conta de origem.
+  saida
+  /// Sai da conta de origem e entra na de destino, no mesmo movimento.
+  transferencia
+  /// Correção pontual com descrição obrigatória, para justificar a diferença.
+  ajuste
+}
+
+enum EstadoMovimentoTesouraria {
+  confirmado
+  pendente
+  estornado
+}
+
+/// Lançamento de tesouraria. Regra de crédito/débito (RN07.1):
+/// - `pagamento`     → débito em `contaOrigemId` (saída de dinheiro)
+/// - `recebimento`   → crédito em `contaDestinoId` (entrada de dinheiro)
+/// - `transferencia` → débito na origem + crédito no destino
+/// - `estorno`        → lançamento inverso; nunca há DELETE (RNF02)
+/// O saldo de uma conta é `saldoInicial + Σcréditos − Σdébitos`, e só
+/// movimentos em estado `confirmado` o alteram.
+model MovimentoTesouraria {
+  id                 String                    @id @default(cuid())
+  empresaId          String?                   @map("empresa_id")
+  numero             String                    @unique
+  data               DateTime                  @db.Date
+  tipo               TipoMovimentoTesouraria
+  contaOrigemId      String?                   @map("conta_origem_id")
+  contaDestinoId     String?                   @map("conta_destino_id")
+  valor              Decimal                   @db.Decimal(18, 4)
+  entidadeTipo       String?                   @map("entidade_tipo")
+  entidadeId         String?                   @map("entidade_id")
+  documentoTipo      TipoDocumentoTesouraria   @default(manual) @map("documento_tipo")
+  documentoId        String?                   @map("documento_id")
+  documentoNumero    String?                   @map("documento_numero")
+  descricao          String?
+  estado             EstadoMovimentoTesouraria @default(confirmado)
+  meioPagamento      String?                   @map("meio_pagamento")
+  utilizadorId       String?                   @map("utilizador_id")
+  sessaoCaixaId      String?                   @map("sessao_caixa_id")
+  movimentoEstornoId String?                   @map("movimento_estorno_id")
+  conciliado         Boolean                   @default(false)
+  dataConciliacao    DateTime?                 @map("data_conciliacao") @db.Date
+  observacaoExtrato  String?                   @map("observacao_extrato")
+  createdAt          DateTime                  @default(now()) @map("created_at")
+
+  empresa          EmpresaConfig?            @relation(fields: [empresaId], references: [id])
+  utilizador       Utilizador?               @relation(fields: [utilizadorId], references: [id])
+  sessaoCaixa      SessaoCaixa?              @relation(fields: [sessaoCaixaId], references: [id])
+  contaOrigem      ContaBancaria?            @relation("ContaOrigem", fields: [contaOrigemId], references: [id])
+  contaDestino     ContaBancaria?            @relation("ContaDestino", fields: [contaDestinoId], references: [id])
+  estornoDe        MovimentoTesouraria?      @relation("Estorno", fields: [movimentoEstornoId], references: [id])
+  estornos         MovimentoTesouraria[]     @relation("Estorno")
+  linhasLancamento LinhaLancamentoContabil[]
+
+  @@index([empresaId, data])
+  @@index([contaOrigemId, data])
+  @@index([contaDestinoId, data])
+  @@index([conciliado])
+  @@index([sessaoCaixaId])
+  @@map("movimentos_tesouraria")
+}
+
+// =============================================================================
+// 9.1 SESSOES DE CAIXA (abertura e fecho de caixa)
+// =============================================================================
+
+enum EstadoSessaoCaixa {
+  aberta
+  fechada
+}
+
+/// Sessão de caixa (turno). Só existe uma sessão aberta por conta de caixa —
+/// garantido pelo índice parcial `sessao_caixa_unica`. Um recebimento em
+/// numerário exige uma sessão aberta, para que o dinheiro entre no caixa de
+/// forma auditável e feche com arqueação.
+model SessaoCaixa {
+  id                   String            @id @default(cuid())
+  empresaId            String            @map("empresa_id")
+  contaCaixaId         String            @map("conta_caixa_id")
+  numero               String            @unique
+  dataAbertura         DateTime          @map("data_abertura") @db.Date
+  horaAbertura         DateTime          @map("hora_abertura")
+  fundoInicial         Decimal           @map("fundo_inicial") @db.Decimal(18, 4)
+  estado               EstadoSessaoCaixa @default(aberta)
+  dataFecho            DateTime?         @map("data_fecho") @db.Date
+  horaFecho            DateTime?         @map("hora_fecho")
+  totalEntradas        Decimal           @default(0.0) @map("total_entradas") @db.Decimal(18, 4)
+  totalSaidas          Decimal           @default(0.0) @map("total_saidas") @db.Decimal(18, 4)
+  totalNumerario       Decimal           @default(0.0) @map("total_numerario") @db.Decimal(18, 4)
+  totalMulticaixa      Decimal           @default(0.0) @map("total_multicaixa") @db.Decimal(18, 4)
+  totalTransferencia   Decimal           @default(0.0) @map("total_transferencia") @db.Decimal(18, 4)
+  totalEsperado        Decimal           @default(0.0) @map("total_esperado") @db.Decimal(18, 4)
+  totalContado         Decimal?          @map("total_contado") @db.Decimal(18, 4)
+  diferenca            Decimal?          @map("diferenca") @db.Decimal(18, 4)
+  observacoes          String?
+  utilizadorAberturaId String?           @map("utilizador_abertura_id")
+  utilizadorFechoId    String?           @map("utilizador_fecho_id")
+  createdAt            DateTime          @default(now()) @map("created_at")
+
+  empresa            EmpresaConfig         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  contaCaixa         ContaBancaria         @relation(fields: [contaCaixaId], references: [id])
+  utilizadorAbertura Utilizador?           @relation("SessaoAbertura", fields: [utilizadorAberturaId], references: [id])
+  utilizadorFecho    Utilizador?           @relation("SessaoFecho", fields: [utilizadorFechoId], references: [id])
+  movimentos         MovimentoTesouraria[]
+  recibos            ReciboVenda[]
+
+  @@index([empresaId, dataAbertura])
+  @@index([contaCaixaId, estado])
+  @@map("sessoes_caixa")
+}
+
+// =============================================================================
+// 9.2 CONTABILIDADE GERAL
+// =============================================================================
+
+/// Natureza normal do saldo de uma conta. Não é o sinal do movimento: uma
+/// conta devedora pode ter saldo credor (ex.: conta corrente de cliente).
+enum NaturezaConta {
+  devedora
+  credora
+}
+
+/// Tipo económico da conta, alinhado com as classes do PGC Angola.
+enum TipoContaContabil {
+  activo
+  passivo
+  capitalProprio
+  proveito
+  custo
+  resultado
+  memo
+}
+
+enum EstadoExercicio {
+  aberto
+  emFecho
+  fechado
+}
+
+enum EstadoPeriodoContabil {
+  aberto
+  fechado
+  bloqueado
+}
+
+enum TipoDiario {
+  vendas
+  compras
+  caixa
+  banco
+  geral
+  ajustamento
+  abertura
+  liquidacao
+  salarios
+  imobilizado
+}
+
+enum EstadoLancamento {
+  rascunho
+  validado
+  estornado
+}
+
+enum OrigemLancamento {
+  manual
+  integracao
+  abertura
+  fecho
+  ajustamento
+  liquidacao
+  estorno
+}
+
+enum LadoLancamento {
+  debito
+  credito
+}
+
+enum TipoEntidadeLancamento {
+  cliente
+  fornecedor
+  funcionario
+  outro
+}
+
+enum TipoExecucaoFecho {
+  fechoMensal
+  apuramentoIva
+  apuramentoResultados
+  fechoAnual
+  aberturaExercicioSeguinte
+}
+
+enum EstadoExecucaoFecho {
+  previsao
+  executado
+  revertido
+  falhado
+}
+
+enum EstadoApuramentoImposto {
+  rascunho
+  validado
+  pago
+}
+
+/// Plano de contas por empresa (PGC Angola).
+///
+/// A árvore é explícita (`contaPaiId`) e o `codigo` é a chave funcional usada
+/// nos relatórios e no SAF-T. Só contas folha (`aceitaMovimento = true`) podem
+/// receber linhas de lançamento; uma conta com filhas nunca aceita movimento.
+model ContaContabil {
+  id               String            @id @default(cuid())
+  empresaId        String            @map("empresa_id")
+  codigo           String
+  designacao       String
+  contaPaiId       String?           @map("conta_pai_id")
+  nivel            Int
+  classe           Int
+  tipo             TipoContaContabil
+  natureza         NaturezaConta
+  aceitaMovimento  Boolean           @default(false) @map("aceita_movimento")
+  exigeCentroCusto Boolean           @default(false) @map("exige_centro_custo")
+  exigeEntidade    Boolean           @default(false) @map("exige_entidade")
+  activa           Boolean           @default(true)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  empresa             EmpresaConfig             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  pai                 ContaContabil?            @relation("ContaContabilArvore", fields: [contaPaiId], references: [id])
+  filhas              ContaContabil[]           @relation("ContaContabilArvore")
+  contaBancaria       ContaBancaria?
+  mapeamentos         MapeamentoConta[]
+  linhasLancamento    LinhaLancamentoContabil[]
+  estruturasRelatorio ContaEstruturaRelatorio[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, classe])
+  @@index([empresaId, aceitaMovimento])
+  @@index([empresaId, activa])
+  @@map("contas_contabeis")
+}
+
+/// Período contabilístico mensal (1..12, mais 13 para ajustes de fecho).
+/// O bloqueio é sempre aplicado no serviço e na base de dados, não só na UI.
+model PeriodoContabil {
+  id           String                @id @default(cuid())
+  exercicioId  String                @map("exercicio_id")
+  numero       Int
+  dataInicio   DateTime              @map("data_inicio") @db.Date
+  dataFim      DateTime              @map("data_fim") @db.Date
+  estado       EstadoPeriodoContabil @default(aberto)
+  fechadoEm    DateTime?             @map("fechado_em")
+  fechadoPorId String?               @map("fechado_por_id")
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+
+  exercicio          ExercicioFiscal      @relation(fields: [exercicioId], references: [id], onDelete: Cascade)
+  fechadoPor         Utilizador?          @relation("PeriodoFechadoPor", fields: [fechadoPorId], references: [id])
+  lancamentos        LancamentoContabil[]
+  execucoesFecho     ExecucaoFecho[]
+  apuramentosImposto ApuramentoImposto[]
+
+  @@unique([exercicioId, numero])
+  @@index([exercicioId, estado])
+  @@map("periodos_contabeis")
+}
+
+/// Diário contabilístico (VD, CP, CX, BC, OD, AB, AP...).
+model DiarioContabil {
+  id         String     @id @default(cuid())
+  empresaId  String     @map("empresa_id")
+  codigo     String
+  designacao String
+  tipo       TipoDiario
+  activo     Boolean    @default(true)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  empresa              EmpresaConfig         @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  sequencias           SequenciaDiario[]
+  lancamentos          LancamentoContabil[]
+  regrasContabilizacao RegraContabilizacao[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, activo])
+  @@map("diarios_contabeis")
+}
+
+/// Numeração sequencial por diário e exercício. `ultimoNumero` só é
+/// incrementado dentro da transacção que valida o lançamento, para não haver
+/// buracos nem números repetidos em concorrência.
+model SequenciaDiario {
+  id           String @id @default(cuid())
+  diarioId     String @map("diario_id")
+  exercicioId  String @map("exercicio_id")
+  ultimoNumero Int    @default(0) @map("ultimo_numero")
+
+  diario    DiarioContabil  @relation(fields: [diarioId], references: [id], onDelete: Cascade)
+  exercicio ExercicioFiscal @relation(fields: [exercicioId], references: [id], onDelete: Cascade)
+
+  @@unique([diarioId, exercicioId])
+  @@map("sequencias_diario")
+}
+
+/// Chave simbólica (ex.: `VAT_OUTPUT`, `BANK_ACCOUNT`, `RESULT_NET`) para a
+/// conta concreta. O motor de contabilização nunca tem contas fixas no código:
+/// resolve-as sempre por aqui.
+model MapeamentoConta {
+  id        String @id @default(cuid())
+  empresaId String @map("empresa_id")
+  chave     String
+  contaId   String @map("conta_id")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  conta   ContaContabil @relation(fields: [contaId], references: [id])
+
+  @@unique([empresaId, chave])
+  @@index([contaId])
+  @@map("mapeamentos_conta")
+}
+
+/// Regra de contabilização para um módulo/tipo de origem.
+///
+/// A regra define que linhas criar no lançamento: lado (débito/crédito),
+/// conta (via chave do mapeamento) e expressão de valor. A validação é
+/// adiada para o motor; aqui só guardamos a configuração declarativa.
+model RegraContabilizacao {
+  id           String   @id @default(cuid())
+  empresaId    String   @map("empresa_id")
+  codigo       String
+  designacao   String
+  moduloOrigem String   @map("modulo_origem")
+  tipoOrigem   String   @map("tipo_origem")
+  diarioId     String   @map("diario_id")
+  activa       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig              @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  diario  DiarioContabil             @relation(fields: [diarioId], references: [id], onDelete: Restrict)
+  linhas  LinhaRegraContabilizacao[]
+
+  @@unique([empresaId, moduloOrigem, tipoOrigem])
+  @@index([empresaId, activa])
+  @@map("regras_contabilizacao")
+}
+
+/// Linha de uma regra de contabilização.
+///
+/// `lado` = débito ou crédito. `chaveConta` resolve-se via `MapeamentoConta`
+/// da mesma empresa. `expressaoValor` é uma das constantes fechadas
+/// (`TOTAL`, `NET`, `TAX`, `TAX:<taxa>`, `BASE`, `DISCOUNT`, `PAID`, `OUTSTANDING`).
+model LinhaRegraContabilizacao {
+  id             String         @id @default(cuid())
+  regraId        String         @map("regra_id")
+  numeroLinha    Int            @map("numero_linha")
+  lado           LadoLancamento
+  chaveConta     String         @map("chave_conta")
+  expressaoValor String         @map("expressao_valor")
+  taxaImposto    String?        @map("taxa_imposto")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  regra RegraContabilizacao @relation(fields: [regraId], references: [id], onDelete: Cascade)
+
+  @@unique([regraId, numeroLinha])
+  @@map("linhas_regra_contabilizacao")
+}
+
+/// Erro de integração contabilística.
+///
+/// Quando o motor não encontra regra ou conta, guarda aqui o erro e devolve
+/// `{ pendente: true }` ao módulo de origem. O módulo **não** falha — o
+/// documento continua o seu ciclo. O erro aparece no ecrã de integração
+/// para reprocessamento manual.
+model ErroIntegracaoContabil {
+  id             String           @id @default(cuid())
+  empresaId      String           @map("empresa_id")
+  moduloOrigem   String           @map("modulo_origem")
+  tipoOrigem     String           @map("tipo_origem")
+  origemId       String           @map("origem_id")
+  origem         OrigemLancamento
+  codigoErro     String           @map("codigo_erro")
+  mensagem       String
+  detalhes       String?          @map("detalhes_json")
+  resolvido      Boolean          @default(false) @map("resolvido")
+  resolvidoEm    DateTime?        @map("resolvido_em")
+  resolvidoPorId String?          @map("resolvido_por_id")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  empresa      EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  resolvidoPor Utilizador?   @relation("ErroIntegracaoResolvidoPor", fields: [resolvidoPorId], references: [id], onDelete: SetNull)
+
+  @@index([empresaId, moduloOrigem, tipoOrigem, origemId, origem])
+  @@index([empresaId, resolvido])
+  @@map("erros_integracao_contabil")
+}
+
+/// Execução de um fecho (mensal, IVA, resultados, anual, abertura).
+///
+/// Cada execução regista o quê, quando, por quem e o estado. O campo
+/// `detalhes` guarda o snapshot da previsão ou do resultado em JSON.
+model ExecucaoFecho {
+  id            String              @id @default(cuid())
+  empresaId     String              @map("empresa_id")
+  periodoId     String?             @map("periodo_id")
+  exercicioId   String              @map("exercicio_id")
+  tipo          TipoExecucaoFecho
+  estado        EstadoExecucaoFecho @default(previsao)
+  iniciadoPorId String              @map("iniciado_por_id")
+  iniciadoEm    DateTime            @default(now()) @map("iniciado_em")
+  concluidoEm   DateTime?           @map("concluido_em")
+  detalhes      String?             @map("detalhes_json")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  empresa     EmpresaConfig        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  periodo     PeriodoContabil?     @relation(fields: [periodoId], references: [id], onDelete: SetNull)
+  exercicio   ExercicioFiscal      @relation(fields: [exercicioId], references: [id], onDelete: Restrict)
+  iniciadoPor Utilizador           @relation("ExecucaoFechoIniciadoPor", fields: [iniciadoPorId], references: [id], onDelete: Restrict)
+  lancamentos LancamentoContabil[]
+  apuramentos ApuramentoImposto[]
+
+  @@index([empresaId, tipo, estado])
+  @@index([periodoId, tipo])
+  @@map("execucoes_fecho")
+}
+
+/// Apuramento de imposto (IVA, IRT, INSS, etc.).
+///
+/// Um apuramento pertence a um período e tipo de imposto. O `saldo`
+/// indica o valor a pagar (positivo) ou a recuperar (negativo).
+/// O `creditoTransitado` transporta o excesso de crédito para o período seguinte.
+model ApuramentoImposto {
+  id                String                  @id @default(cuid())
+  empresaId         String                  @map("empresa_id")
+  periodoId         String                  @map("periodo_id")
+  exercicioId       String                  @map("exercicio_id")
+  tipoImposto       String                  @map("tipo_imposto") // ex.: 'IVA', 'IRT', 'INSS'
+  estado            EstadoApuramentoImposto @default(rascunho)
+  liquidado         Decimal                 @default(0) @map("liquidado") @db.Decimal(18, 4)
+  dedutivel         Decimal                 @default(0) @map("dedutivel") @db.Decimal(18, 4)
+  creditoTransitado Decimal                 @default(0) @map("credito_transitado") @db.Decimal(18, 4)
+  saldo             Decimal                 @default(0) @db.Decimal(18, 4)
+  lancamentoId      String?                 @unique @map("lancamento_id")
+  pagoEm            DateTime?               @map("pago_em")
+  pagoPorId         String?                 @map("pago_por_id")
+  execucaoFechoId   String?                 @map("execucao_fecho_id")
+  criadoPorId       String                  @map("criado_por_id")
+  validadoPorId     String?                 @map("validado_por_id")
+  validadoEm        DateTime?               @map("validado_em")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+
+  empresa       EmpresaConfig       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  periodo       PeriodoContabil     @relation(fields: [periodoId], references: [id], onDelete: Restrict)
+  exercicio     ExercicioFiscal     @relation(fields: [exercicioId], references: [id], onDelete: Restrict)
+  execucaoFecho ExecucaoFecho?      @relation(fields: [execucaoFechoId], references: [id], onDelete: SetNull)
+  lancamento    LancamentoContabil? @relation
+  pagoPor       Utilizador?         @relation("ApuramentoPagoPor", fields: [pagoPorId], references: [id], onDelete: SetNull)
+  criadoPor     Utilizador          @relation("ApuramentoCriadoPor", fields: [criadoPorId], references: [id], onDelete: Restrict)
+  validadoPor   Utilizador?         @relation("ApuramentoValidadoPor", fields: [validadoPorId], references: [id], onDelete: Restrict)
+
+  @@unique([periodoId, tipoImposto])
+  @@index([empresaId, periodoId, tipoImposto])
+  @@map("apuramentos_imposto")
+}
+
+/// Lançamento contabilístico em partidas dobradas.
+///
+/// O ciclo é `rascunho → validado → estornado`. Um lançamento validado é
+/// imutável: a única transição permitida é para `estornado`, feita pelo
+/// lançamento de estorno. O `numero` só é atribuído na validação, dentro da
+/// mesma transacção que incrementa a sequência do diário.
+model LancamentoContabil {
+  id                 String           @id @default(cuid())
+  empresaId          String           @map("empresa_id")
+  diarioId           String           @map("diario_id")
+  exercicioId        String           @map("exercicio_id")
+  periodoId          String           @map("periodo_id")
+  numero             Int?
+  dataContabilistica DateTime         @map("data_contabilistica") @db.Date
+  dataDocumento      DateTime?        @map("data_documento") @db.Date
+  descricao          String
+  estado             EstadoLancamento @default(rascunho)
+  origem             OrigemLancamento @default(manual)
+
+  moduloOrigem    String? @map("modulo_origem")
+  tipoOrigem      String? @map("tipo_origem")
+  origemId        String? @map("origem_id")
+  execucaoFechoId String? @map("execucao_fecho_id")
+  apuramentoId    String? @unique @map("apuramento_id")
+  estornoDeId     String? @unique @map("estorno_de_id")
+
+  moeda        String  @default("AOA")
+  taxaCambio   Decimal @default(1) @map("taxa_cambio") @db.Decimal(18, 6)
+  totalDebito  Decimal @default(0) @map("total_debito") @db.Decimal(18, 4)
+  totalCredito Decimal @default(0) @map("total_credito") @db.Decimal(18, 4)
+
+  criadoPorId   String    @map("criado_por_id")
+  validadoPorId String?   @map("validado_por_id")
+  validadoEm    DateTime? @map("validado_em")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  empresa       EmpresaConfig             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  diario        DiarioContabil            @relation(fields: [diarioId], references: [id], onDelete: Restrict)
+  exercicio     ExercicioFiscal           @relation(fields: [exercicioId], references: [id], onDelete: Restrict)
+  periodo       PeriodoContabil           @relation(fields: [periodoId], references: [id], onDelete: Restrict)
+  execucaoFecho ExecucaoFecho?            @relation(fields: [execucaoFechoId], references: [id], onDelete: SetNull)
+  apuramento    ApuramentoImposto?        @relation(fields: [apuramentoId], references: [id])
+  estornoDe     LancamentoContabil?       @relation("EstornoLancamento", fields: [estornoDeId], references: [id], onDelete: SetNull)
+  estornadoPor  LancamentoContabil?       @relation("EstornoLancamento")
+  criadoPor     Utilizador                @relation("LancamentoCriadoPor", fields: [criadoPorId], references: [id], onDelete: Restrict)
+  validadoPor   Utilizador?               @relation("LancamentoValidadoPor", fields: [validadoPorId], references: [id], onDelete: Restrict)
+  linhas        LinhaLancamentoContabil[]
+
+  @@unique([diarioId, exercicioId, numero])
+  @@unique([moduloOrigem, tipoOrigem, origemId, origem])
+  @@index([empresaId, dataContabilistica])
+  @@index([periodoId, estado])
+  @@index([exercicioId, estado])
+  @@index([diarioId, estado])
+  @@map("lancamentos_contabeis")
+}
+
+/// Linha de um lançamento. Cada linha tem exactamente um lado (débito ou
+/// crédito) positivo; o serviço e a constraint SQL recusam linhas com os dois
+/// lados preenchidos ou com valores negativos.
+model LinhaLancamentoContabil {
+  id                    String                  @id @default(cuid())
+  lancamentoId          String                  @map("lancamento_id")
+  numeroLinha           Int                     @map("numero_linha")
+  contaId               String                  @map("conta_id")
+  debito                Decimal                 @default(0) @db.Decimal(18, 4)
+  credito               Decimal                 @default(0) @db.Decimal(18, 4)
+  descricao             String?
+  centroCustoId         String?                 @map("centro_custo_id")
+  entidadeTipo          TipoEntidadeLancamento? @map("entidade_tipo")
+  entidadeId            String?                 @map("entidade_id")
+  codigoImposto         String?                 @map("codigo_imposto")
+  baseImposto           Decimal?                @map("base_imposto") @db.Decimal(18, 4)
+  dataVencimento        DateTime?               @map("data_vencimento") @db.Date
+  conciliadoEm          DateTime?               @map("conciliado_em")
+  movimentoTesourariaId String?                 @map("movimento_tesouraria_id")
+
+  lancamento          LancamentoContabil   @relation(fields: [lancamentoId], references: [id], onDelete: Restrict)
+  conta               ContaContabil        @relation(fields: [contaId], references: [id], onDelete: Restrict)
+  centroCusto         CentroCusto?         @relation(fields: [centroCustoId], references: [id], onDelete: SetNull)
+  movimentoTesouraria MovimentoTesouraria? @relation(fields: [movimentoTesourariaId], references: [id], onDelete: SetNull)
+
+  @@index([contaId])
+  @@index([entidadeTipo, entidadeId])
+  @@index([movimentoTesourariaId])
+  @@index([lancamentoId, numeroLinha])
+  @@map("linhas_lancamento_contabil")
+}
+
+/// Registo imutável de uma acção com impacto fiscal.
+///
+/// A conformidade fiscal exige saber quem alterou um documento depois de
+/// emitido, não só o que o documento diz. Por isso o registo guarda o actor,
+/// o antes e o depois: um log que só guarda o "o que" não responde a "porquê".
+/// Não há `updatedAt` nem update exposto — a escrita é append-only.
+model AuditLog {
+  id               String              @id @default(cuid())
+  empresaId        String              @map("empresa_id")
+  utilizadorId     String?             @map("utilizador_id")
+  acao             TipoAcaoAuditoria
+  severidade       SeveridadeAuditoria @default(info)
+  /// Entidade afectada, ex.: `FaturaVenda`, `Utilizador`, `Caixa`.
+  entidade         String
+  /// Chave primária da linha afectada, ex.: o id da fatura.
+  entidadeId       String?             @map("entidade_id")
+  /// Secção da aplicação, para filtrar a UI sem adivinhar pela acção.
+  modulo           String              @default("fiscal")
+  descricao        String
+  /// Estado anterior, em JSON. `null` quando a linha não existia.
+  dadosAnteriores  String?             @map("dados_anteriores")
+  /// Estado posterior, em JSON.
+  dadosNovos       String?             @map("dados_novos")
+  /// Endereço IP e agente, para o registo sobreviver a uma conta partilhada.
+  enderecoIp       String?             @map("endereco_ip")
+  agenteUtilizador String?             @map("agente_utilizador")
+  /// Soma SHA-256 dos campos相邻 alterados. Um log não tem de ser
+  /// inviolável por si só, mas tem de dar para perceber se foi mexido.
+  integridade      String?
+  dataHora         DateTime            @default(now()) @map("data_hora") @db.Timestamptz
+  /// Se true, o registo foi arquivado (soft-delete). Não aparece nas listagens padrão.
+  arquivado        Boolean             @default(false) @map("arquivado")
+
+  empresa    EmpresaConfig? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  utilizador Utilizador?    @relation(fields: [utilizadorId], references: [id])
+
+  @@index([empresaId, dataHora])
+  @@index([entidade, entidadeId])
+  @@index([utilizadorId, dataHora])
+  @@index([arquivado])
+  @@map("audit_logs")
+}
+
+/// Rastreio de um ficheiro fiscal produzido para a AGT.
+///
+/// Não submete nada: a submissão é feita pelo software certificado do
+/// operador. O que fica guardado aqui é a cadeia de custódia do ficheiro —
+/// qual era, com que hash, quando foi gerado e o que a AT respondeu quando o
+/// operador voltou a carregar o resultado.
+model SubmissaoAgt {
+  id                 String             @id @default(cuid())
+  empresaId          String             @map("empresa_id")
+  /// `SAFTPT01_2026_03.xml`, `AGT_2026_03.xml`.
+  nomeFicheiro       String             @map("nome_ficheiro")
+  /// `1.01_01` para SAF-T; a versão do layout AGT para ficheiros próprios.
+  versao             String
+  /// ISO-4217. `AOA` para AGT, `EUR` para SAF-T PT.
+  moeda              String             @default("AOA")
+  periodo            String
+  estado             EstadoSubmissaoAgt @default(rascunho)
+  /// SHA-256 do ficheiro exactamente como escrito em disco. É o que liga a
+  /// resposta da AT ao ficheiro que a originou.
+  hashFicheiro       String             @map("hash_ficheiro")
+  /// Hash da assinatura (`ATC-UD`), quando aplicável.
+  hashAssinatura     String?            @map("hash_assinatura")
+  utilizadorId       String?            @map("utilizador_id")
+  /// Diagnóstico do validador estrutural no momento da geração, em JSON.
+  resultadoValidacao String?            @map("resultado_validacao")
+  /// Saída devolvida pelo operador a partir do software certificado.
+  respostaAgt        String?            @map("resposta_agt")
+  observacoes        String?
+  submittedAt        DateTime?          @map("submitted_at") @db.Timestamptz
+  dataHora           DateTime           @default(now()) @map("data_hora") @db.Timestamptz
+
+  empresa    EmpresaConfig? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  utilizador Utilizador?    @relation(fields: [utilizadorId], references: [id])
+
+  @@index([empresaId, dataHora])
+  @@index([estado])
+  @@map("submissoes_agt")
+}
+
+// =============================================================================
+// 10. RECURSOS HUMANOS (RH)
+// =============================================================================
+//
+// Prefixo `Rh*` em modelos e enums. IDs `cuid()`. `criadoPorId`/`aprovadoPorId`
+// referem `Utilizador` apenas por `String?` (ADR-001, tabela de entidades
+// externas). Entidades-mestre scoped por empresa têm `empresaId` obrigatório
+// (ADR-009); as filhas herdam o escopo pela relação com o pai.
+// Migrações incrementais RH-101..RH-104.
+
+// ── RH-101 · Estrutura organizacional e funcionários ─────────────────────────
+
+enum RhEstadoFuncionario {
+  ATIVO
+  SUSPENSO
+  INATIVO
+  CESSADO
+}
+
+enum RhGenero {
+  MASCULINO
+  FEMININO
+  OUTRO
+}
+
+enum RhEstadoCivil {
+  SOLTEIRO
+  CASADO
+  DIVORCIADO
+  VIUVO
+  UNIAO_FACTO
+}
+
+enum RhFormaPagamento {
+  TRANSFERENCIA
+  NUMERARIO
+  CHEQUE
+}
+
+enum RhTipoContrato {
+  PRAZO_INDETERMINADO
+  PRAZO_CERTO
+  EXPERIENCIA
+  ESTAGIO
+  TEMPO_PARCIAL
+  OUTRO
+}
+
+enum RhEstadoContrato {
+  ATIVO
+  ENCERRADO
+  SUSPENSO
+}
+
+enum RhMotivoCessacao {
+  TERMO
+  DEMISSAO
+  DESPEDIMENTO
+  MUTUO_ACORDO
+  REFORMA
+  FALECIMENTO
+  PERIODO_EXPERIENCIA
+  OUTRO
+}
+
+enum RhModoSubsidioNatal {
+  PAGAMENTO_UNICO
+  DUODECIMOS
+}
+
+enum RhModoSubsidioFerias {
+  ANTES_GOZO
+  MES_FIXO
+  DUODECIMOS
+}
+
+/// Departamento organizacional da empresa.
+model RhDepartamento {
+  id        String  @id @default(cuid())
+  empresaId String  @map("empresa_id")
+  codigo    String
+  nome      String
+  ativo     Boolean @default(true)
+
+  funcionarios RhFuncionario[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, ativo])
+  @@map("rh_departamentos")
+}
+
+/// Cargo/função da empresa.
+model RhCargo {
+  id        String  @id @default(cuid())
+  empresaId String  @map("empresa_id")
+  codigo    String
+  nome      String
+  ativo     Boolean @default(true)
+
+  funcionarios RhFuncionario[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, ativo])
+  @@map("rh_cargos")
+}
+
+/// Funcionário (colaborador) da empresa.
+model RhFuncionario {
+  id        String @id @default(cuid())
+  empresaId String @map("empresa_id")
+  /// Código sequencial ("001", "002"…) gerado via `RhSequencia`.
+  codigo    String
+  nome      String
+
+  documentoNumero String?        @map("documento_numero")
+  nif             String?
+  niss            String?
+  dataNascimento  DateTime?      @map("data_nascimento") @db.Date
+  genero          RhGenero?
+  estadoCivil     RhEstadoCivil? @map("estado_civil")
+  nacionalidade   String?
+  morada          String?
+  telefone        String?
+  email           String?
+  fotoPath        String?        @map("foto_path")
+
+  departamentoId String? @map("departamento_id")
+  cargoId        String? @map("cargo_id")
+  categoria      String?
+
+  dataAdmissao DateTime            @map("data_admissao") @db.Date
+  dataCessacao DateTime?           @map("data_cessacao") @db.Date
+  estado       RhEstadoFuncionario @default(ATIVO)
+
+  formaPagamento RhFormaPagamento @default(TRANSFERENCIA) @map("forma_pagamento")
+  banco          String?
+  iban           String?
+
+  modoSubsidioNatal          RhModoSubsidioNatal?  @map("modo_subsidio_natal")
+  modoSubsidioFerias         RhModoSubsidioFerias? @map("modo_subsidio_ferias")
+  mesPagamentoSubsidioNatal  Int?                  @map("mes_pagamento_subsidio_natal")
+  mesPagamentoSubsidioFerias Int?                  @map("mes_pagamento_subsidio_ferias")
+
+  departamento RhDepartamento? @relation(fields: [departamentoId], references: [id])
+  cargo        RhCargo?        @relation(fields: [cargoId], references: [id])
+
+  contratos       RhContrato[]
+  dependentes     RhDependente[]
+  documentos      RhFuncionarioDocumento[]
+  rubricasFixas   RhFuncionarioRubrica[]
+  alteracoes      RhAlteracaoMensal[]
+  ausencias       RhAusencia[]
+  horasExtra      RhHoraExtra[]
+  feriasSaldos    RhFeriasSaldo[]
+  marcacoesFerias RhMarcacaoFerias[]
+  afetacoes       RhAfetacao[]
+  processamentos  RhProcessamento[]
+  restricoes      RhRestricaoFuncionario[]
+  dividas         RhProcessoDivida[]
+  retroativos     RhRetroativo[]
+  pagamentos      RhPagamento[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, estado])
+  @@index([nome])
+  @@index([nif])
+  @@map("rh_funcionarios")
+}
+
+model RhDependente {
+  id             String    @id @default(cuid())
+  funcionarioId  String    @map("funcionario_id")
+  nome           String
+  parentesco     String
+  dataNascimento DateTime? @map("data_nascimento") @db.Date
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId])
+  @@map("rh_dependentes")
+}
+
+model RhFuncionarioDocumento {
+  id            String  @id @default(cuid())
+  funcionarioId String  @map("funcionario_id")
+  tipo          String
+  descricao     String?
+  caminho       String
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([funcionarioId])
+  @@map("rh_funcionario_documentos")
+}
+
+model RhContrato {
+  id            String           @id @default(cuid())
+  funcionarioId String           @map("funcionario_id")
+  tipo          RhTipoContrato
+  estado        RhEstadoContrato @default(ATIVO)
+
+  dataInicio DateTime  @map("data_inicio") @db.Date
+  dataFim    DateTime? @map("data_fim") @db.Date
+
+  salarioBase         Decimal @map("salario_base") @db.Decimal(18, 4)
+  moeda               String  @default("AOA")
+  cargaHorariaSemanal Int     @default(44) @map("carga_horaria_semanal")
+  categoria           String?
+
+  motivoCessacao RhMotivoCessacao? @map("motivo_cessacao")
+  dataCessacao   DateTime?         @map("data_cessacao") @db.Date
+  observacoes    String?
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id])
+
+  alteracoesSalariais RhAlteracaoSalarial[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, estado])
+  @@map("rh_contratos")
+}
+
+/// Histórico de aumentos/promoções com data de efeito.
+model RhAlteracaoSalarial {
+  id         String   @id @default(cuid())
+  contratoId String   @map("contrato_id")
+  dataEfeito DateTime @map("data_efeito") @db.Date
+
+  salarioAnterior Decimal @map("salario_anterior") @db.Decimal(18, 4)
+  salarioNovo     Decimal @map("salario_novo") @db.Decimal(18, 4)
+  motivo          String?
+
+  criadoPorId String? @map("criado_por_id")
+
+  contrato RhContrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([contratoId, dataEfeito])
+  @@map("rh_alteracoes_salariais")
+}
+
+/// Contador sequencial por chave (ex.: `FUNCIONARIO`, `RECIBO:RV:2026`).
+model RhSequencia {
+  id     String @id @default(cuid())
+  chave  String
+  ultimo Int    @default(0)
+
+  @@unique([chave])
+  @@map("rh_sequencias")
+}
+
+// ── RH-102 · Rubricas, alterações mensais e assiduidade ──────────────────────
+
+enum RhTipoRubrica {
+  REMUNERACAO
+  DESCONTO
+  ENCARGO_PATRONAL
+}
+
+enum RhNaturezaRubrica {
+  FIXA
+  VARIAVEL
+  EXTRAORDINARIA
+}
+
+enum RhFormaCalculoRubrica {
+  VALOR_FIXO
+  PERCENTAGEM_SALARIO
+  VALOR_X_QUANTIDADE
+  SISTEMA
+}
+
+enum RhOrigemItem {
+  AUTOMATICO
+  MANUAL
+  ALTERACAO_MENSAL
+  RECORRENTE
+  DIVIDA
+  RETROATIVO
+  SISTEMA
+}
+
+enum RhEstadoAlteracao {
+  PENDENTE
+  APLICADA
+  ANULADA
+}
+
+enum RhTipoHoraExtra {
+  DIURNA_UTIL
+  NOTURNA
+  DESCANSO_FERIADO
+}
+
+enum RhEstadoAprovacao {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  CANCELADO
+}
+
+enum RhEstadoFerias {
+  PLANEADA
+  APROVADA
+  GOZADA
+  CANCELADA
+}
+
+/// Rubrica de vencimento (remuneração, desconto ou encargo patronal).
+model RhRubrica {
+  id           String                @id @default(cuid())
+  empresaId    String                @map("empresa_id")
+  codigo       String
+  descricao    String
+  tipo         RhTipoRubrica
+  natureza     RhNaturezaRubrica     @default(FIXA)
+  formaCalculo RhFormaCalculoRubrica @default(VALOR_FIXO) @map("forma_calculo")
+
+  valorPadrao Decimal? @map("valor_padrao") @db.Decimal(18, 4)
+  percentagem Decimal? @db.Decimal(9, 4)
+
+  incideIRT  Boolean @default(true) @map("incide_irt")
+  incideINSS Boolean @default(true) @map("incide_inss")
+
+  limiteIsencaoIRT  Decimal? @map("limite_isencao_irt") @db.Decimal(18, 4)
+  limiteIsencaoINSS Decimal? @map("limite_isencao_inss") @db.Decimal(18, 4)
+
+  ordemRecibo   Int     @default(100) @map("ordem_recibo")
+  sistema       Boolean @default(false)
+  /// Identificador estável das rubricas de seed (SALARIO_BASE, IRT, …).
+  codigoSistema String? @map("codigo_sistema")
+
+  /// EXT: plano de contas (via `FinancasGateway`, ADR-002).
+  contaDebitoId  String? @map("conta_debito_id")
+  contaCreditoId String? @map("conta_credito_id")
+
+  ativo Boolean @default(true)
+
+  funcionarioRubricas RhFuncionarioRubrica[]
+  alteracoes          RhAlteracaoMensal[]
+  itens               RhProcessamentoItem[]
+  retroativos         RhRetroativo[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, tipo, ativo])
+  @@map("rh_rubricas")
+}
+
+/// Rubrica recorrente atribuída ao funcionário (ex.: subsídio de renda).
+model RhFuncionarioRubrica {
+  id            String @id @default(cuid())
+  funcionarioId String @map("funcionario_id")
+  rubricaId     String @map("rubrica_id")
+
+  valor       Decimal?  @db.Decimal(18, 4)
+  percentagem Decimal?  @db.Decimal(9, 4)
+  moeda       String    @default("AOA")
+  dataInicio  DateTime  @map("data_inicio") @db.Date
+  dataFim     DateTime? @map("data_fim") @db.Date
+  ativo       Boolean   @default(true)
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  rubrica     RhRubrica     @relation(fields: [rubricaId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, ativo])
+  @@map("rh_funcionario_rubricas")
+}
+
+/// Alteração mensal (prémios, comissões, descontos pontuais).
+model RhAlteracaoMensal {
+  id            String @id @default(cuid())
+  funcionarioId String @map("funcionario_id")
+  ano           Int
+  mes           Int
+  rubricaId     String @map("rubrica_id")
+
+  quantidade     Decimal?          @db.Decimal(18, 4)
+  valor          Decimal           @db.Decimal(18, 4)
+  moeda          String            @default("AOA")
+  extraordinaria Boolean           @default(false)
+  observacao     String?
+  estado         RhEstadoAlteracao @default(PENDENTE)
+
+  /// Preenchido quando a alteração é aplicada num processamento.
+  processamentoItemId String? @map("processamento_item_id")
+  criadoPorId         String? @map("criado_por_id")
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id])
+  rubrica     RhRubrica     @relation(fields: [rubricaId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, ano, mes, estado])
+  @@map("rh_alteracoes_mensais")
+}
+
+/// Tipo de ausência parametrizável (falta, doença, maternidade, …).
+model RhTipoAusencia {
+  id        String @id @default(cuid())
+  empresaId String @map("empresa_id")
+  codigo    String
+  descricao String
+
+  justificada                 Boolean @default(true)
+  descontaSalario             Boolean @default(false) @map("desconta_salario")
+  descontaSubsidioAlimentacao Boolean @default(false) @map("desconta_subsidio_alimentacao")
+  ativo                       Boolean @default(true)
+
+  ausencias RhAusencia[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, codigo])
+  @@map("rh_tipos_ausencia")
+}
+
+model RhAusencia {
+  id            String @id @default(cuid())
+  funcionarioId String @map("funcionario_id")
+  tipoId        String @map("tipo_id")
+
+  dataInicio DateTime @map("data_inicio") @db.Date
+  dataFim    DateTime @map("data_fim") @db.Date
+  dias       Decimal  @db.Decimal(9, 2)
+  horas      Decimal? @db.Decimal(9, 2)
+
+  justificativoPath String?           @map("justificativo_path")
+  observacao        String?
+  estado            RhEstadoAprovacao @default(PENDENTE)
+  aprovadoPorId     String?           @map("aprovado_por_id")
+  /// Quando descontada num processamento.
+  processadaEm      DateTime?         @map("processada_em")
+
+  funcionario RhFuncionario  @relation(fields: [funcionarioId], references: [id])
+  tipo        RhTipoAusencia @relation(fields: [tipoId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, dataInicio])
+  @@map("rh_ausencias")
+}
+
+model RhHoraExtra {
+  id            String @id @default(cuid())
+  funcionarioId String @map("funcionario_id")
+
+  data        DateTime        @db.Date
+  horas       Decimal         @db.Decimal(9, 2)
+  tipo        RhTipoHoraExtra
+  percentagem Decimal         @db.Decimal(9, 4)
+
+  estado       RhEstadoAprovacao @default(PENDENTE)
+  processadaEm DateTime?         @map("processada_em")
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([funcionarioId, data])
+  @@map("rh_horas_extra")
+}
+
+model RhFeriasSaldo {
+  id            String @id @default(cuid())
+  funcionarioId String @map("funcionario_id")
+  ano           Int
+
+  diasDireito              Decimal @default(22) @map("dias_direito") @db.Decimal(9, 2)
+  diasTransitados          Decimal @default(0) @map("dias_transitados") @db.Decimal(9, 2)
+  diasMarcados             Decimal @default(0) @map("dias_marcados") @db.Decimal(9, 2)
+  diasGozados              Decimal @default(0) @map("dias_gozados") @db.Decimal(9, 2)
+  subsidioFeriasProcessado Boolean @default(false) @map("subsidio_ferias_processado")
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([funcionarioId, ano])
+  @@map("rh_ferias_saldos")
+}
+
+model RhMarcacaoFerias {
+  id            String @id @default(cuid())
+  funcionarioId String @map("funcionario_id")
+  ano           Int
+
+  dataInicio DateTime @map("data_inicio") @db.Date
+  dataFim    DateTime @map("data_fim") @db.Date
+  dias       Decimal  @db.Decimal(9, 2)
+
+  estado                  RhEstadoFerias @default(PLANEADA)
+  aprovadoPorId           String?        @map("aprovado_por_id")
+  /// Evita processar o subsídio de férias duas vezes.
+  subsidioProcessamentoId String?        @map("subsidio_processamento_id")
+  observacao              String?
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, ano])
+  @@map("rh_marcacoes_ferias")
+}
+
+/// Afetação do custo a centro de custo/projecto (soma = 100% por vigência).
+model RhAfetacao {
+  id            String  @id @default(cuid())
+  funcionarioId String  @map("funcionario_id")
+  /// Referência ao `CentroCusto` global (ADR-003/ADR-009). FK real na RH-104.
+  centroCustoId String? @map("centro_custo_id")
+
+  percentagem Decimal   @db.Decimal(9, 4)
+  dataInicio  DateTime  @map("data_inicio") @db.Date
+  dataFim     DateTime? @map("data_fim") @db.Date
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  centroCusto CentroCusto?  @relation(fields: [centroCustoId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, dataInicio])
+  @@map("rh_afetacoes")
+}
+
+// ── RH-103 · Parâmetros, períodos e processamento ────────────────────────────
+
+enum RhTipoProcessamento {
+  VENCIMENTO
+  SUBSIDIO_FERIAS
+  SUBSIDIO_NATAL
+  EXTRAORDINARIO
+  FIM_CONTRATO
+}
+
+enum RhModoProcessamento {
+  INDIVIDUAL
+  LOTE
+}
+
+enum RhEstadoProcessamento {
+  PROCESSADO
+  ANULADO
+}
+
+enum RhEstadoLote {
+  EM_EXECUCAO
+  CONCLUIDO
+  CONCLUIDO_COM_ERROS
+  FALHADO
+  ANULADO
+}
+
+enum RhEstadoPeriodo {
+  ABERTO
+  FECHADO
+}
+
+enum RhTipoPeriodo {
+  MENSAL
+}
+
+enum RhEstadoRecibo {
+  EMITIDO
+  ANULADO
+}
+
+/// Tabela de escalões de IRT com vigência (nunca hard-coded).
+model RhTabelaIRT {
+  id        String @id @default(cuid())
+  empresaId String @map("empresa_id")
+  descricao String
+
+  vigenteDesde DateTime  @map("vigente_desde") @db.Date
+  vigenteAte   DateTime? @map("vigente_ate") @db.Date
+  ativo        Boolean   @default(true)
+
+  escaloes RhEscalaoIRT[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, vigenteDesde])
+  @@map("rh_tabelas_irt")
+}
+
+model RhEscalaoIRT {
+  id       String @id @default(cuid())
+  tabelaId String @map("tabela_id")
+  ordem    Int
+
+  rendimentoDe  Decimal  @map("rendimento_de") @db.Decimal(18, 2)
+  rendimentoAte Decimal? @map("rendimento_ate") @db.Decimal(18, 2)
+  parcelaFixa   Decimal  @map("parcela_fixa") @db.Decimal(18, 2)
+  taxa          Decimal  @db.Decimal(9, 4)
+  excessoDe     Decimal  @map("excesso_de") @db.Decimal(18, 2)
+
+  tabela RhTabelaIRT @relation(fields: [tabelaId], references: [id], onDelete: Cascade)
+
+  @@unique([tabelaId, ordem])
+  @@map("rh_escaloes_irt")
+}
+
+/// Parâmetro fiscal/de configuração com vigência (INSS_TRAB, BASE_DIAS_MES, …).
+model RhParametroFiscal {
+  id        String  @id @default(cuid())
+  empresaId String  @map("empresa_id")
+  chave     String
+  valor     String
+  /// DECIMAL | INT | BOOLEAN | JSON | STRING
+  tipoValor String  @default("DECIMAL") @map("tipo_valor")
+  descricao String?
+
+  vigenteDesde DateTime  @map("vigente_desde") @db.Date
+  vigenteAte   DateTime? @map("vigente_ate") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, chave, vigenteDesde])
+  @@map("rh_parametros_fiscais")
+}
+
+/// Configuração singleton por empresa (subsídios, base de dias, série de recibo).
+model RhConfiguracao {
+  id        String @id @default(cuid())
+  empresaId String @unique @map("empresa_id")
+
+  modoSubsidioNatalPadrao  RhModoSubsidioNatal  @default(PAGAMENTO_UNICO) @map("modo_subsidio_natal_padrao")
+  mesSubsidioNatalPadrao   Int                  @default(12) @map("mes_subsidio_natal_padrao")
+  modoSubsidioFeriasPadrao RhModoSubsidioFerias @default(ANTES_GOZO) @map("modo_subsidio_ferias_padrao")
+  mesSubsidioFeriasPadrao  Int?                 @map("mes_subsidio_ferias_padrao")
+
+  baseDiasMes             Int     @default(30) @map("base_dias_mes")
+  liquidoNegativoBloqueia Boolean @default(true) @map("liquido_negativo_bloqueia")
+  serieRecibo             String  @default("RV") @map("serie_recibo")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("rh_configuracoes")
+}
+
+/// Período salarial mensal (`P01`..`P12`).
+model RhPeriodo {
+  id        String        @id @default(cuid())
+  empresaId String        @map("empresa_id")
+  ano       Int
+  codigo    String
+  tipo      RhTipoPeriodo @default(MENSAL)
+  mes       Int
+  descricao String
+
+  dataInicio DateTime @map("data_inicio") @db.Date
+  dataFim    DateTime @map("data_fim") @db.Date
+
+  estado       RhEstadoPeriodo @default(ABERTO)
+  fechadoEm    DateTime?       @map("fechado_em")
+  fechadoPorId String?         @map("fechado_por_id")
+
+  lotes          RhLoteProcessamento[]
+  processamentos RhProcessamento[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, ano, codigo])
+  @@index([empresaId, ano, mes])
+  @@map("rh_periodos")
+}
+
+/// Cabeçalho de uma execução de processamento (individual ou lote).
+model RhLoteProcessamento {
+  id        String              @id @default(cuid())
+  periodoId String              @map("periodo_id")
+  modo      RhModoProcessamento
+  /// PROCESSAR | ANULAR
+  operacao  String              @default("PROCESSAR")
+
+  /// Lista de `RhTipoProcessamento` e snapshot dos parâmetros do ecrã.
+  tipos      Json
+  parametros Json
+
+  estado            RhEstadoLote @default(EM_EXECUCAO)
+  totalFuncionarios Int          @default(0) @map("total_funcionarios")
+  totalSucesso      Int          @default(0) @map("total_sucesso")
+  totalErros        Int          @default(0) @map("total_erros")
+  totalLiquido      Decimal      @default(0) @map("total_liquido") @db.Decimal(18, 4)
+  relatorioErros    Json?        @map("relatorio_erros")
+
+  criadoPorId String?   @map("criado_por_id")
+  iniciadoEm  DateTime  @default(now()) @map("iniciado_em")
+  concluidoEm DateTime? @map("concluido_em")
+
+  periodo        RhPeriodo         @relation(fields: [periodoId], references: [id])
+  processamentos RhProcessamento[]
+
+  @@index([periodoId, estado])
+  @@map("rh_lotes_processamento")
+}
+
+model RhProcessamento {
+  id            String  @id @default(cuid())
+  loteId        String? @map("lote_id")
+  periodoId     String  @map("periodo_id")
+  funcionarioId String  @map("funcionario_id")
+  contratoId    String? @map("contrato_id")
+
+  tipo      RhTipoProcessamento
+  /// >1 apenas para EXTRAORDINARIO.
+  sequencia Int                   @default(1)
+  modo      RhModoProcessamento
+  manual    Boolean               @default(false)
+  estado    RhEstadoProcessamento @default(PROCESSADO)
+
+  dataProcessamento  DateTime  @map("data_processamento")
+  dataLimiteFaltasHE DateTime? @map("data_limite_faltas_he")
+  diasProcessados    Int       @map("dias_processados")
+  moeda              String    @default("AOA")
+  taxaCambio         Decimal?  @map("taxa_cambio") @db.Decimal(18, 6)
+
+  totalRemuneracoes Decimal @map("total_remuneracoes") @db.Decimal(18, 4)
+  totalDescontos    Decimal @map("total_descontos") @db.Decimal(18, 4)
+  totalEncargos     Decimal @default(0) @map("total_encargos") @db.Decimal(18, 4)
+  liquido           Decimal @db.Decimal(18, 4)
+
+  baseINSS        Decimal @map("base_inss") @db.Decimal(18, 4)
+  baseIRT         Decimal @map("base_irt") @db.Decimal(18, 4)
+  inssTrabalhador Decimal @map("inss_trabalhador") @db.Decimal(18, 4)
+  inssPatronal    Decimal @map("inss_patronal") @db.Decimal(18, 4)
+  irt             Decimal @db.Decimal(18, 4)
+  irtEscalaoId    String? @map("irt_escalao_id")
+
+  /// Parâmetros + entrada do cálculo (reprodutibilidade).
+  snapshot Json
+  avisos   Json?
+
+  anuladoEm      DateTime? @map("anulado_em")
+  anuladoPorId   String?   @map("anulado_por_id")
+  motivoAnulacao String?   @map("motivo_anulacao")
+  criadoPorId    String?   @map("criado_por_id")
+
+  lote        RhLoteProcessamento? @relation(fields: [loteId], references: [id])
+  periodo     RhPeriodo            @relation(fields: [periodoId], references: [id])
+  funcionario RhFuncionario        @relation(fields: [funcionarioId], references: [id])
+
+  itens      RhProcessamentoItem[]
+  recibo     RhRecibo?
+  pagamentos RhPagamento[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, periodoId, tipo, estado])
+  @@index([periodoId, estado])
+  @@index([dataProcessamento])
+  @@index([loteId])
+  @@map("rh_processamentos")
+}
+
+/// Linha de recibo: guarda cópia imutável de código/descrição/incidências.
+model RhProcessamentoItem {
+  id              String  @id @default(cuid())
+  processamentoId String  @map("processamento_id")
+  rubricaId       String? @map("rubrica_id")
+
+  codigo    String
+  descricao String
+  tipo      RhTipoRubrica
+  origem    RhOrigemItem
+
+  quantidade    Decimal? @db.Decimal(18, 4)
+  valorUnitario Decimal? @map("valor_unitario") @db.Decimal(18, 4)
+  valor         Decimal  @db.Decimal(18, 4)
+  moeda         String   @default("AOA")
+  taxaCambio    Decimal? @map("taxa_cambio") @db.Decimal(18, 6)
+
+  incideIRT    Boolean @map("incide_irt")
+  incideINSS   Boolean @map("incide_inss")
+  ordem        Int     @default(100)
+  /// Alteração/prestação/ausência de origem.
+  referenciaId String? @map("referencia_id")
+
+  processamento RhProcessamento @relation(fields: [processamentoId], references: [id], onDelete: Cascade)
+  rubrica       RhRubrica?      @relation(fields: [rubricaId], references: [id])
+
+  @@index([processamentoId])
+  @@map("rh_processamento_itens")
+}
+
+model RhRecibo {
+  id              String @id @default(cuid())
+  processamentoId String @unique @map("processamento_id")
+
+  serie  String
+  ano    Int
+  numero Int
+  estado RhEstadoRecibo @default(EMITIDO)
+
+  emitidoEm  DateTime  @default(now()) @map("emitido_em")
+  impressoes Int       @default(0)
+  pdfPath    String?   @map("pdf_path")
+  anuladoEm  DateTime? @map("anulado_em")
+
+  processamento RhProcessamento @relation(fields: [processamentoId], references: [id])
+
+  @@unique([serie, ano, numero])
+  @@index([processamentoId])
+  @@map("rh_recibos")
+}
+
+/// Restrição manual configurada por funcionário (bloqueio ao processamento).
+model RhRestricaoFuncionario {
+  id                String               @id @default(cuid())
+  funcionarioId     String               @map("funcionario_id")
+  /// null = todos os tipos.
+  tipoProcessamento RhTipoProcessamento? @map("tipo_processamento")
+
+  motivo      String
+  dataInicio  DateTime  @map("data_inicio") @db.Date
+  dataFim     DateTime? @map("data_fim") @db.Date
+  ativa       Boolean   @default(true)
+  criadoPorId String?   @map("criado_por_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+
+  @@index([funcionarioId, ativa])
+  @@map("rh_restricoes_funcionario")
+}
+
+// ── RH-104 · Pagamentos, dívidas, retroactivos e honorários ──────────────────
+
+enum RhEstadoPagamento {
+  PENDENTE
+  PARCIAL
+  PAGO
+  ESTORNADO
+  CANCELADO
+}
+
+enum RhEstadoOrdemPagamento {
+  ABERTA
+  ENVIADA
+  CONCLUIDA
+  CANCELADA
+}
+
+enum RhTipoDivida {
+  ADIANTAMENTO
+  EMPRESTIMO
+  PENHORA
+  OUTRO
+}
+
+enum RhEstadoDivida {
+  ATIVA
+  SUSPENSA
+  LIQUIDADA
+  CANCELADA
+}
+
+enum RhEstadoPrestacao {
+  PENDENTE
+  DESCONTADA
+  ANULADA
+  PERDOADA
+}
+
+enum RhEstadoRetroativo {
+  PENDENTE
+  APLICADO
+  ANULADO
+}
+
+enum RhEstadoHonorario {
+  PROCESSADO
+  ANULADO
+}
+
+/// Centro de custo global/partilhado (ADR-003/ADR-009). Entidade de topo,
+/// reutilizável por vários módulos; o RH referencia-a pelas afetações e
+/// actividades.
+model CentroCusto {
+  id         String  @id @default(cuid())
+  empresaId  String  @map("empresa_id")
+  codigo     String
+  designacao String
+  descricao  String?
+  ativo      Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa          EmpresaConfig             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  afetacoes        RhAfetacao[]
+  atividades       RhAtividade[]
+  linhasLancamento LinhaLancamentoContabil[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, ativo])
+  @@map("centros_custo")
+}
+
+model RhOrdemPagamento {
+  id        String @id @default(cuid())
+  empresaId String @map("empresa_id")
+  numero    Int
+
+  periodoId      String?                @map("periodo_id")
+  banco          String?
+  /// EXT: conta bancária de origem (via `FinancasGateway`).
+  formaPagamento RhFormaPagamento       @map("forma_pagamento")
+  estado         RhEstadoOrdemPagamento @default(ABERTA)
+  totalValor     Decimal                @map("total_valor") @db.Decimal(18, 4)
+
+  /// Ficheiro de transferência gerado.
+  ficheiroPath String? @map("ficheiro_path")
+  criadoPorId  String? @map("criado_por_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  empresa    EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  pagamentos RhPagamento[]
+
+  @@unique([empresaId, numero])
+  @@map("rh_ordens_pagamento")
+}
+
+model RhPagamento {
+  id              String  @id @default(cuid())
+  processamentoId String  @map("processamento_id")
+  funcionarioId   String  @map("funcionario_id")
+  ordemId         String? @map("ordem_id")
+
+  formaPagamento RhFormaPagamento
+  valor          Decimal           @db.Decimal(18, 4)
+  valorPago      Decimal           @default(0) @map("valor_pago") @db.Decimal(18, 4)
+  estado         RhEstadoPagamento @default(PENDENTE)
+
+  dataPagamento DateTime? @map("data_pagamento")
+  referencia    String?
+  /// EXT: conta bancária / movimento de tesouraria (via `FinancasGateway`).
+  estornadoEm   DateTime? @map("estornado_em")
+  motivoEstorno String?   @map("motivo_estorno")
+  criadoPorId   String?   @map("criado_por_id")
+
+  processamento RhProcessamento   @relation(fields: [processamentoId], references: [id])
+  funcionario   RhFuncionario     @relation(fields: [funcionarioId], references: [id])
+  ordem         RhOrdemPagamento? @relation(fields: [ordemId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([processamentoId])
+  @@index([funcionarioId, estado])
+  @@map("rh_pagamentos")
+}
+
+model RhProcessoDivida {
+  id            String       @id @default(cuid())
+  funcionarioId String       @map("funcionario_id")
+  tipo          RhTipoDivida
+
+  descricao      String?
+  /// Para PENHORA (tribunal/entidade).
+  credor         String?
+  numeroProcesso String? @map("numero_processo")
+
+  valorTotal       Decimal @map("valor_total") @db.Decimal(18, 4)
+  numeroPrestacoes Int     @map("numero_prestacoes")
+  valorPrestacao   Decimal @map("valor_prestacao") @db.Decimal(18, 4)
+  saldo            Decimal @db.Decimal(18, 4)
+  moeda            String  @default("AOA")
+
+  dataInicio            DateTime       @map("data_inicio") @db.Date
+  estado                RhEstadoDivida @default(ATIVA)
+  respeitaLimitePenhora Boolean        @default(false) @map("respeita_limite_penhora")
+  criadoPorId           String?        @map("criado_por_id")
+
+  funcionario RhFuncionario       @relation(fields: [funcionarioId], references: [id])
+  prestacoes  RhPrestacaoDivida[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([funcionarioId, estado])
+  @@map("rh_processos_divida")
+}
+
+model RhPrestacaoDivida {
+  id         String @id @default(cuid())
+  processoId String @map("processo_id")
+  numero     Int
+  ano        Int
+  mes        Int
+
+  valor               Decimal           @db.Decimal(18, 4)
+  valorDescontado     Decimal           @default(0) @map("valor_descontado") @db.Decimal(18, 4)
+  estado              RhEstadoPrestacao @default(PENDENTE)
+  processamentoItemId String?           @map("processamento_item_id")
+
+  processo RhProcessoDivida @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  @@unique([processoId, numero])
+  @@index([ano, mes, estado])
+  @@map("rh_prestacoes_divida")
+}
+
+model RhRetroativo {
+  id            String @id @default(cuid())
+  funcionarioId String @map("funcionario_id")
+  rubricaId     String @map("rubrica_id")
+
+  anoOrigem    Int @map("ano_origem")
+  mesOrigem    Int @map("mes_origem")
+  anoAplicacao Int @map("ano_aplicacao")
+  mesAplicacao Int @map("mes_aplicacao")
+
+  valor               Decimal            @db.Decimal(18, 4)
+  motivo              String?
+  estado              RhEstadoRetroativo @default(PENDENTE)
+  processamentoItemId String?            @map("processamento_item_id")
+  criadoPorId         String?            @map("criado_por_id")
+
+  funcionario RhFuncionario @relation(fields: [funcionarioId], references: [id])
+  rubrica     RhRubrica     @relation(fields: [rubricaId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([funcionarioId, anoAplicacao, mesAplicacao, estado])
+  @@map("rh_retroativos")
+}
+
+/// Prestador de serviços independente (honorários).
+model RhIndependente {
+  id        String @id @default(cuid())
+  empresaId String @map("empresa_id")
+  codigo    String
+  nome      String
+
+  nif      String?
+  email    String?
+  telefone String?
+  morada   String?
+  banco    String?
+  iban     String?
+
+  /// Sobrescreve o parâmetro global de retenção.
+  taxaRetencao Decimal? @map("taxa_retencao") @db.Decimal(9, 4)
+  ativo        Boolean  @default(true)
+
+  atividades RhAtividade[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, ativo])
+  @@map("rh_independentes")
+}
+
+model RhAtividade {
+  id             String @id @default(cuid())
+  independenteId String @map("independente_id")
+
+  descricao     String
+  valorFixo     Decimal? @map("valor_fixo") @db.Decimal(18, 4)
+  valorHora     Decimal? @map("valor_hora") @db.Decimal(18, 4)
+  centroCustoId String?  @map("centro_custo_id")
+
+  dataInicio DateTime  @map("data_inicio") @db.Date
+  dataFim    DateTime? @map("data_fim") @db.Date
+  ativa      Boolean   @default(true)
+
+  independente   RhIndependente             @relation(fields: [independenteId], references: [id])
+  centroCusto    CentroCusto?               @relation(fields: [centroCustoId], references: [id], onDelete: SetNull)
+  processamentos RhProcessamentoHonorario[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([independenteId])
+  @@map("rh_atividades")
+}
+
+model RhProcessamentoHonorario {
+  id          String @id @default(cuid())
+  atividadeId String @map("atividade_id")
+  ano         Int
+  mes         Int
+
+  quantidade    Decimal? @db.Decimal(18, 4)
+  valorBruto    Decimal  @map("valor_bruto") @db.Decimal(18, 4)
+  taxaRetencao  Decimal  @map("taxa_retencao") @db.Decimal(9, 4)
+  valorRetencao Decimal  @map("valor_retencao") @db.Decimal(18, 4)
+  valorLiquido  Decimal  @map("valor_liquido") @db.Decimal(18, 4)
+
+  estado         RhEstadoHonorario @default(PROCESSADO)
+  anuladoEm      DateTime?         @map("anulado_em")
+  motivoAnulacao String?           @map("motivo_anulacao")
+  criadoPorId    String?           @map("criado_por_id")
+
+  atividade  RhAtividade            @relation(fields: [atividadeId], references: [id])
+  pagamentos RhPagamentoHonorario[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([atividadeId, ano, mes])
+  @@map("rh_processamentos_honorario")
+}
+
+model RhPagamentoHonorario {
+  id              String @id @default(cuid())
+  processamentoId String @map("processamento_id")
+
+  formaPagamento RhFormaPagamento
+  valor          Decimal           @db.Decimal(18, 4)
+  estado         RhEstadoPagamento @default(PENDENTE)
+  dataPagamento  DateTime?         @map("data_pagamento")
+  referencia     String?
+  /// EXT: conta bancária / movimento de tesouraria (via `FinancasGateway`).
+
+  processamento RhProcessamentoHonorario @relation(fields: [processamentoId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([processamentoId])
+  @@map("rh_pagamentos_honorario")
+}
+
+// =============================================================================
+// Demonstrações financeiras configuráveis
+// =============================================================================
+
+/// Estrutura de uma demonstração financeira. O relatório não tem contas
+/// escritas no código: a estrutura mapeia linhas para contas e é editável por
+/// empresa, para que o plano de contas possa divergir sem alterar o motor.
+model EstruturaRelatorio {
+  id         String                 @id @default(cuid())
+  empresaId  String                 @map("empresa_id")
+  codigo     String
+  designacao String
+  tipo       TipoEstruturaRelatorio
+  activa     Boolean                @default(true)
+  createdAt  DateTime               @default(now()) @map("created_at")
+  updatedAt  DateTime               @updatedAt @map("updated_at")
+
+  empresa EmpresaConfig             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  linhas  LinhaEstruturaRelatorio[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, tipo])
+  @@map("estruturas_relatorio")
+}
+
+/// Linha da estrutura. As linhas com contas associadas são folhas; as restantes
+/// agregam as filhas. `sinal` inverte o valor (ex.: custos apresentados como
+/// negativos) e `operacao` escolhe qual lado do movimento conta.
+model LinhaEstruturaRelatorio {
+  id          String                 @id @default(cuid())
+  estruturaId String                 @map("estrutura_id")
+  parentId    String?                @map("parent_id")
+  codigo      String
+  designacao  String
+  ordem       Int                    @default(0)
+  nivel       Int                    @default(1)
+  tipo        TipoLinhaRelatorio     @default(subtotal)
+  operacao    OperacaoLinhaRelatorio @default(saldo)
+  sinal       Int                    @default(1)
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @updatedAt @map("updated_at")
+
+  estrutura EstruturaRelatorio        @relation(fields: [estruturaId], references: [id], onDelete: Cascade)
+  pai       LinhaEstruturaRelatorio?  @relation("LinhaEstruturaArvore", fields: [parentId], references: [id], onDelete: SetNull)
+  filhas    LinhaEstruturaRelatorio[] @relation("LinhaEstruturaArvore")
+  contas    ContaEstruturaRelatorio[]
+
+  @@unique([estruturaId, codigo])
+  @@index([estruturaId, ordem])
+  @@map("linhas_estrutura_relatorio")
+}
+
+/// Associação entre uma linha e uma conta contabilística. `sinal` permite
+/// inverter uma conta específica sem duplicar a linha.
+model ContaEstruturaRelatorio {
+  id      String @id @default(cuid())
+  linhaId String @map("linha_id")
+  contaId String @map("conta_id")
+  sinal   Int    @default(1)
+
+  linha LinhaEstruturaRelatorio @relation(fields: [linhaId], references: [id], onDelete: Cascade)
+  conta ContaContabil           @relation(fields: [contaId], references: [id], onDelete: Cascade)
+
+  @@unique([linhaId, contaId])
+  @@index([contaId])
+  @@map("contas_estrutura_relatorio")
+}
+
+enum TipoEstruturaRelatorio {
+  balanco
+  demonstracaoResultados
+  fluxosCaixa
+  alteracoesCapitalProprio
+}
+
+enum TipoLinhaRelatorio {
+  activo
+  passivo
+  capitalProprio
+  proveito
+  custo
+  resultado
+  subtotal
+  total
+  fluxo
+  memo
+}
+
+enum OperacaoLinhaRelatorio {
+  saldo
+  debito
+  credito
+  creditoMenosDebito
+}

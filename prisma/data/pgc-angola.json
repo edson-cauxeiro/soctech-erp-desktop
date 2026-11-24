@@ -1,0 +1,1160 @@
+[
+  {
+    "codigo": "1",
+    "designacao": "Meios fixos e investimentos",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "11",
+    "designacao": "Imobilizações corpóreas",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "111",
+    "designacao": "Terrenos e recursos naturais",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "112",
+    "designacao": "Edifícios e outras construções",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "113",
+    "designacao": "Equipamento básico",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "114",
+    "designacao": "Equipamento de transporte",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "115",
+    "designacao": "Equipamento administrativo",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "116",
+    "designacao": "Ferramentas e utensílios",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "117",
+    "designacao": "Outras imobilizações corpóreas",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "118",
+    "designacao": "Imobilizações em curso",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "119",
+    "designacao": "Adiantamentos por conta de imobilizações corpóreas",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "12",
+    "designacao": "Imobilizações incorpóreas",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "121",
+    "designacao": "Trespasses",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "122",
+    "designacao": "Direitos de propriedade industrial",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "123",
+    "designacao": "Software",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "124",
+    "designacao": "Outras imobilizações incorpóreas",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "13",
+    "designacao": "Investimentos financeiros",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "131",
+    "designacao": "Participações de capital",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "132",
+    "designacao": "Obrigações e títulos",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "133",
+    "designacao": "Outros investimentos financeiros",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "2",
+    "designacao": "Existências",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "21",
+    "designacao": "Compras",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "211",
+    "designacao": "Compras de mercadorias",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "212",
+    "designacao": "Compras de matérias-primas",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "213",
+    "designacao": "Compras de materiais diversos",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "22",
+    "designacao": "Mercadorias",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "23",
+    "designacao": "Matérias-primas",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "24",
+    "designacao": "Produtos acabados e intermédios",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "25",
+    "designacao": "Subprodutos, desperdícios, refugos e refeitura",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "26",
+    "designacao": "Produtos em curso",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "27",
+    "designacao": "Materiais diversos",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "28",
+    "designacao": "Adiantamentos por conta de compras",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "3",
+    "designacao": "Terceiros",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "31",
+    "designacao": "Clientes",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "311",
+    "designacao": "Clientes conta corrente",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "312",
+    "designacao": "Clientes letras a receber",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "313",
+    "designacao": "Clientes títulos a receber",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "314",
+    "designacao": "Clientes de cobrança duvidosa",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "32",
+    "designacao": "Fornecedores",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "321",
+    "designacao": "Fornecedores conta corrente",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "322",
+    "designacao": "Fornecedores letras a pagar",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "323",
+    "designacao": "Fornecedores títulos a pagar",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "324",
+    "designacao": "Adiantamentos a fornecedores",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "33",
+    "designacao": "Pessoal",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "331",
+    "designacao": "Remunerações a pagar",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "332",
+    "designacao": "Adiantamentos ao pessoal",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "333",
+    "designacao": "Cauções",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "334",
+    "designacao": "Outros movimentos com o pessoal",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeEntidade": true
+  },
+  {
+    "codigo": "34",
+    "designacao": "Estado",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "341",
+    "designacao": "Imposto sobre o rendimento",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "342",
+    "designacao": "Imposto sobre o valor acrescentado",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "3421",
+    "designacao": "IVA dedutível",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "3422",
+    "designacao": "IVA liquidado",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "3423",
+    "designacao": "IVA a pagar",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "3424",
+    "designacao": "IVA a recuperar",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "343",
+    "designacao": "Imposto de selo",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "344",
+    "designacao": "Contribuições para a segurança social",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "345",
+    "designacao": "Outros impostos",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "35",
+    "designacao": "Instituições de crédito e seguros",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "351",
+    "designacao": "Empréstimos bancários",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "352",
+    "designacao": "Descobertos bancários",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "353",
+    "designacao": "Seguros",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "354",
+    "designacao": "Outras instituições de crédito e seguros",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "36",
+    "designacao": "Outros devedores e credores",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "361",
+    "designacao": "Outros devedores",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "362",
+    "designacao": "Outros credores",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "363",
+    "designacao": "Devedores e credores por acréscimos",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "37",
+    "designacao": "Acréscimos e diferimentos",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "371",
+    "designacao": "Acréscimos de proveitos",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "372",
+    "designacao": "Acréscimos de custos",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "373",
+    "designacao": "Proveitos diferidos",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "374",
+    "designacao": "Custos diferidos",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "38",
+    "designacao": "Provisões",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "381",
+    "designacao": "Provisões para riscos e encargos",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "382",
+    "designacao": "Provisões para depreciações",
+    "tipo": "passivo",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "4",
+    "designacao": "Meios monetários",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "41",
+    "designacao": "Caixa",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "411",
+    "designacao": "Caixa em moeda nacional",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "412",
+    "designacao": "Caixa em moeda estrangeira",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "42",
+    "designacao": "Depósitos à ordem",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "421",
+    "designacao": "Depósitos à ordem em moeda nacional",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "422",
+    "designacao": "Depósitos à ordem em moeda estrangeira",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "43",
+    "designacao": "Depósitos a prazo",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "431",
+    "designacao": "Depósitos a prazo em moeda nacional",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "432",
+    "designacao": "Depósitos a prazo em moeda estrangeira",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "44",
+    "designacao": "Títulos negociáveis",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "45",
+    "designacao": "Outros meios monetários",
+    "tipo": "activo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "5",
+    "designacao": "Capital próprio",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "51",
+    "designacao": "Capital",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "511",
+    "designacao": "Capital social",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "512",
+    "designacao": "Quotas de capital",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "513",
+    "designacao": "Capital por realizar",
+    "tipo": "capitalProprio",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "52",
+    "designacao": "Acções próprias",
+    "tipo": "capitalProprio",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "53",
+    "designacao": "Reservas",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "531",
+    "designacao": "Reservas legais",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "532",
+    "designacao": "Reservas estatutárias",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "533",
+    "designacao": "Reservas livres",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "534",
+    "designacao": "Reservas de revalorização",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "54",
+    "designacao": "Resultados transitados",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "55",
+    "designacao": "Resultados de exercícios anteriores",
+    "tipo": "capitalProprio",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "6",
+    "designacao": "Proveitos e ganhos",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "61",
+    "designacao": "Vendas",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "611",
+    "designacao": "Vendas de mercadorias",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "612",
+    "designacao": "Vendas de produtos acabados",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "613",
+    "designacao": "Vendas de serviços",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "614",
+    "designacao": "Vendas de matérias-primas",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "615",
+    "designacao": "Devoluções e descontos de vendas",
+    "tipo": "proveito",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "62",
+    "designacao": "Prestações de serviços",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "621",
+    "designacao": "Prestações de serviços",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "622",
+    "designacao": "Serviços subsidiários",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "63",
+    "designacao": "Proveitos suplementares",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "64",
+    "designacao": "Proveitos financeiros",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "641",
+    "designacao": "Juros obtidos",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "642",
+    "designacao": "Dividendos obtidos",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "643",
+    "designacao": "Diferenças de câmbio favoráveis",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "644",
+    "designacao": "Outros proveitos financeiros",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "65",
+    "designacao": "Outros proveitos e ganhos",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "651",
+    "designacao": "Vendas de imobilizações",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "652",
+    "designacao": "Outros proveitos e ganhos operacionais",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "653",
+    "designacao": "Outros proveitos e ganhos não operacionais",
+    "tipo": "proveito",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "7",
+    "designacao": "Custos e perdas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "71",
+    "designacao": "Custo das existências vendidas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "711",
+    "designacao": "Custo das mercadorias vendidas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "712",
+    "designacao": "Custo das matérias-primas vendidas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "713",
+    "designacao": "Custo dos produtos acabados vendidos",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "72",
+    "designacao": "Fornecimentos e serviços de terceiros",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "721",
+    "designacao": "Trabalhos especializados",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "722",
+    "designacao": "Publicidade e propaganda",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "723",
+    "designacao": "Vigilância e segurança",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "724",
+    "designacao": "Honorários",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "725",
+    "designacao": "Conservação e reparação",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "726",
+    "designacao": "Materiais de consumo",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "727",
+    "designacao": "Energia e fluidos",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "728",
+    "designacao": "Deslocações e estadas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "729",
+    "designacao": "Outros fornecimentos e serviços",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "73",
+    "designacao": "Custos com o pessoal",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "731",
+    "designacao": "Remunerações",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "732",
+    "designacao": "Encargos sociais",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "733",
+    "designacao": "Indemnizações",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "734",
+    "designacao": "Outros custos com o pessoal",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "74",
+    "designacao": "Depreciações e amortizações",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "741",
+    "designacao": "Depreciações de imobilizações corpóreas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "742",
+    "designacao": "Amortizações de imobilizações incorpóreas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true,
+    "exigeCentroCusto": true
+  },
+  {
+    "codigo": "75",
+    "designacao": "Custos financeiros",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "751",
+    "designacao": "Juros suportados",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "752",
+    "designacao": "Diferenças de câmbio desfavoráveis",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "753",
+    "designacao": "Outros custos financeiros",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "76",
+    "designacao": "Outros custos e perdas",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "761",
+    "designacao": "Custos de imobilizações",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "762",
+    "designacao": "Outros custos e perdas operacionais",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "763",
+    "designacao": "Outros custos e perdas não operacionais",
+    "tipo": "custo",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "8",
+    "designacao": "Resultados",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": false
+  },
+  {
+    "codigo": "81",
+    "designacao": "Resultados operacionais",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "82",
+    "designacao": "Resultados financeiros",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "83",
+    "designacao": "Resultados correntes",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "84",
+    "designacao": "Resultados não correntes",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "85",
+    "designacao": "Resultados antes de impostos",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "86",
+    "designacao": "Imposto sobre os lucros",
+    "tipo": "resultado",
+    "natureza": "devedora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "87",
+    "designacao": "Resultados líquidos das actividades",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  },
+  {
+    "codigo": "88",
+    "designacao": "Resultados líquidos do exercício",
+    "tipo": "resultado",
+    "natureza": "credora",
+    "aceitaMovimento": true
+  }
+]

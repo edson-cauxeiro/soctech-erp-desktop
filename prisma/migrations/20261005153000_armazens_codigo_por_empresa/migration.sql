@@ -1,0 +1,21 @@
+-- Unicidade do código de armazém por empresa.
+--
+-- O alvo do modelo é `UNIQUE (empresa_id, codigo)`, igual ao que `ContaBancaria`
+-- já usa (`contas_bancarias_empresa_codigo_key`).
+--
+-- Este índice é aditivo e hoje é redundante: `armazens.codigo` continua com um
+-- `@unique` global, que é mais forte. A redundância é deliberada e temporária.
+--
+-- Porque não se remove já o `@unique` global: `createArmazemSchema` ainda não
+-- aceita `empresaId` (ver `src/main/validators/armazem.validator.ts`), pelo que
+-- todo o armazém criado pela aplicação fica com `empresa_id IS NULL`. Em
+-- PostgreSQL, NULL é distinto de NULL numa restrição UNIQUE, logo uma
+-- restrição composta admitiria vários armazéns com o mesmo `codigo` nesse
+-- estado — verificado na base: com só o índice composto, três linhas com
+-- `codigo = 'DUP-TEST'` e `empresa_id IS NULL` são aceites.
+--
+-- Assim que os services passarem a enviar `empresaId` (Fase 2), este índice
+-- passa a ser o único e o `armazens_codigo_key` global deve ser removido.
+-- A partir daí este comentário e o `@deprecated` no schema ficam obsoletos.
+
+CREATE UNIQUE INDEX "armazens_empresa_codigo_key" ON "armazens"("empresa_id", "codigo");

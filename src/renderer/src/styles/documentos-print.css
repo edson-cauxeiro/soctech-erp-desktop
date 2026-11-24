@@ -1,0 +1,75 @@
+/**
+ * @file documentos-print.css
+ * @description Estilos para visualização de documentos A4 e impressão limpa / exportação PDF no DoraERP.
+ */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: transparent !important;
+    color: #000 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* Isola a folha do documento: o resto do shell ERP não é impresso. */
+  body * {
+    visibility: hidden;
+  }
+
+  [data-document-print],
+  [data-document-print] * {
+    visibility: visible;
+  }
+
+  [data-document-print] {
+    position: absolute;
+    inset: 0;
+    box-shadow: none;
+    border: none;
+  }
+
+  .a4-document-container {
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+}
+
+.a4-document-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 16mm;
+  margin: 0 auto;
+  background-color: #ffffff;
+  color: #1a1f2c;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.watermark-anulado {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 5rem;
+  font-weight: 800;
+  color: rgba(239, 68, 68, 0.18);
+  border: 8px solid rgba(239, 68, 68, 0.25);
+  padding: 10px 40px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+  z-index: 5;
+}

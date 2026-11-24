@@ -1,0 +1,23 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.tsbuildinfo
+*.log*
+.claude
+.codex
+
+# Variáveis de ambiente (contém credenciais sensíveis)
+.env
+.env.local
+.env.*.local
+
+# Prisma — cliente gerado (regenerado com `prisma generate`)
+prisma/generated/
+
+# Playwright — artefactos de execução dos testes E2E
+test-results/
+playwright-report/
+blob-report/
+.playwright/
