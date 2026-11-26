@@ -149,7 +149,7 @@ export class DemonstracoesService {
     return this.prisma.estruturaRelatorio.findMany({
       where: { empresaId, ...(tipo ? { tipo } : {}) },
       orderBy: [{ tipo: 'asc' }, { codigo: 'asc' }],
-      include: { _count: { select: { linhas: true } } },
+      include: { linhas: { orderBy: [{ ordem: 'asc' }, { codigo: 'asc' }] } },
     });
   }
 

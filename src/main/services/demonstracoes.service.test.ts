@@ -439,7 +439,7 @@ describe('DemonstracoesService', () => {
 
   describe('estruturas', () => {
     it('lista estruturas da empresa, opcionalmente filtradas por tipo', async () => {
-      const itens = [{ id: 'e1', _count: { linhas: 2 } }];
+      const itens = [{ id: 'e1', linhas: [{ id: 'l1', codigo: 'ATIVO', ordem: 1 }] }];
       prismaMock.estruturaRelatorio.findMany.mockResolvedValue(itens);
 
       expect(await service.listarEstruturas('emp-1')).toEqual(itens);
@@ -447,7 +447,7 @@ describe('DemonstracoesService', () => {
 
       const esperado = {
         orderBy: [{ tipo: 'asc' }, { codigo: 'asc' }],
-        include: { _count: { select: { linhas: true } } },
+        include: { linhas: { orderBy: [{ ordem: 'asc' }, { codigo: 'asc' }] } },
       };
       expect(prismaMock.estruturaRelatorio.findMany).toHaveBeenNthCalledWith(1, {
         where: { empresaId: 'emp-1' },
