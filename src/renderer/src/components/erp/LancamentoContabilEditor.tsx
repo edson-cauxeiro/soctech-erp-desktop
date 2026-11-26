@@ -34,25 +34,13 @@ function formatMoney(value: number): string {
 }
 
 function criarValoresVazios(empresaId: string): LancamentoDraftValues {
-  const linhaVazia = () => ({
-    contaId: '',
-    debito: '0',
-    credito: '0',
-    descricao: '',
-    centroCustoId: '',
-    entidadeTipo: null,
-    entidadeId: '',
-    codigoImposto: '',
-    baseImposto: '',
-    dataVencimento: '',
-  });
   return {
     empresaId,
     diarioId: '',
     dataContabilistica: new Date().toISOString().slice(0, 10),
     dataDocumento: '',
     descricao: '',
-    linhas: [linhaVazia(), linhaVazia()],
+    linhas: [],
   };
 }
 
@@ -228,7 +216,8 @@ export function LancamentoContabilEditor({ open, onOpenChange, empresaId, lancam
   const inputCls =
     'w-full h-9 px-3 rounded-md border border-input bg-background text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors';
 
-  const botoesBloqueados = Boolean(bloqueado) || isSaving || isValidating || isLoading || !detalheCarregado;
+  const botoesBloqueados =
+    Boolean(bloqueado) || isSaving || isValidating || isLoading || !detalheCarregado || fields.length < 2;
 
   const rodape = (
     <div className="flex flex-wrap items-center justify-between gap-3">

@@ -66,6 +66,12 @@ export function LinhasEditor({ form, fields, append, remove, contas, disabled }:
 
       {erroGeral && <p className="text-xs text-destructive">{erroGeral}</p>}
 
+      {fields.length === 0 && (
+        <div className="border border-dashed border-border rounded-md p-6 text-center text-sm text-muted-foreground">
+          Adicione pelo menos duas linhas.
+        </div>
+      )}
+
       <div className="border border-border rounded-md overflow-auto min-h-0">
         <table className="w-full text-sm min-w-[860px]">
           <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground sticky top-0 z-10">
@@ -151,7 +157,7 @@ export function LinhasEditor({ form, fields, append, remove, contas, disabled }:
                       variant="ghost"
                       size="icon"
                       onClick={() => remove(index)}
-                      disabled={disabled || fields.length <= 2}
+                      disabled={disabled}
                       title="Remover linha"
                       className="text-destructive hover:bg-destructive/10"
                     >

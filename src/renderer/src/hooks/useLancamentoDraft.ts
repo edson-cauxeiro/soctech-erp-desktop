@@ -130,7 +130,7 @@ export function useLancamentoDraft(defaults?: Partial<LancamentoDraftValues>): U
       dataContabilistica: defaults?.dataContabilistica ?? new Date().toISOString().slice(0, 10),
       dataDocumento: defaults?.dataDocumento ?? '',
       descricao: defaults?.descricao ?? '',
-      linhas: defaults?.linhas && defaults.linhas.length >= 2 ? defaults.linhas : [linhaVazia(), linhaVazia()],
+      linhas: defaults?.linhas ?? [],
     },
     mode: 'onBlur',
   });
