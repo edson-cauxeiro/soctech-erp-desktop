@@ -374,10 +374,13 @@ export function SelectField({
   required,
   options,
   span,
+  floating = false,
   placeholder = "— Selecionar ou pesquisar —",
 }: BaseFieldProps & {
   options: (string | { value: string; label: string })[];
   placeholder?: string;
+  /** Renderiza a lista de opções num portal, evitando cortes por containers com overflow. */
+  floating?: boolean;
 }) {
   const { register, setValue, watch, formState } = useFormContext();
   const currentValue = watch(name) ?? "";
@@ -395,6 +398,7 @@ export function SelectField({
         placeholder={placeholder}
         required={required}
         hasError={hasError}
+        portal={floating}
       />
     </FieldWrap>
   );
