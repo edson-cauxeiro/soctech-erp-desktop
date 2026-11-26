@@ -31,9 +31,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "../ui/dialog";
 import { SearchSelect } from "../ui/SearchSelect";
+import { FormDialog } from "./FormDialog";
 import { getCurrencySymbol } from "../../utils/currency";
 import { PriceInput, QuantityInput } from "./FormPrimitives";
 import { toast } from "sonner";
@@ -546,19 +546,39 @@ export function ComprasManager() {
       )}
 
       {/* Modal: Receção de Mercadorias (com entrada no Armazém 01 Geral) */}
-      <Dialog open={isGuiaModalOpen} onOpenChange={setIsGuiaModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto p-0">
-          <DialogHeader className="p-6 border-b border-border bg-muted/10">
-            <div className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-primary" />
-              <DialogTitle>Guia de Receção de Mercadorias (Entrada Física)</DialogTitle>
-            </div>
-            <DialogDescription>
-              A confirmação desta guia efetuará a entrada de stock no Armazém indicado (por defeito: ARM-01 Geral) e recalculará o Preço Médio Ponderado (PMP).
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="p-6 space-y-4">
+      <FormDialog
+        open={isGuiaModalOpen}
+        onOpenChange={setIsGuiaModalOpen}
+        title={
+          <span className="flex items-center gap-2">
+            <Truck className="w-5 h-5 text-primary" />
+            Guia de Receção de Mercadorias (Entrada Física)
+          </span>
+        }
+        description="A confirmação desta guia efetuará a entrada de stock no Armazém indicado (por defeito: ARM-01 Geral) e recalculará o Preço Médio Ponderado (PMP)."
+        bodyClassName="space-y-4"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsGuiaModalOpen(false)}
+              className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateGuia}
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 flex items-center gap-1.5"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              Confirmar Receção & Dar Entrada de Stock
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1">Fornecedor</label>
@@ -571,6 +591,7 @@ export function ComprasManager() {
                   }))}
                   placeholder="Pesquisar fornecedor..."
                   required
+                  portal
                 />
               </div>
 
@@ -587,6 +608,7 @@ export function ComprasManager() {
                   }))}
                   placeholder="Pesquisar armazém..."
                   required
+                  portal
                 />
               </div>
             </div>
@@ -639,6 +661,7 @@ export function ComprasManager() {
                       placeholder="Pesquisar artigo..."
                       className="min-w-0"
                       required
+                      portal
                     />
 
                     <div className="w-full">
@@ -713,9 +736,8 @@ export function ComprasManager() {
                 Confirmar Receção & Dar Entrada de Stock
               </button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FormDialog>
 
       {/* Modal: Nova Encomenda a Fornecedor */}
       <Dialog open={isEncomendaModalOpen} onOpenChange={setIsEncomendaModalOpen}>
