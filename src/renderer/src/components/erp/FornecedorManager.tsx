@@ -23,13 +23,7 @@ import {
 } from "lucide-react";
 import { FornecedorDto } from "../../@types/electron";
 import { fornecedorApi } from "../../api/fornecedor.api";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../ui/dialog";
+import { FormDialog } from "./FormDialog";
 import {
   FormShell,
   FormSection,
@@ -350,29 +344,30 @@ export function FornecedorManager() {
       </div>
 
       {/* Modal de Criação / Edição de Fornecedor */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto p-0">
-          <DialogHeader className="p-6 border-b border-border bg-muted/10">
-            <div className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-primary" />
-              <DialogTitle>
-                {editingFornecedor ? `Editar Fornecedor: ${editingFornecedor.nome}` : "Novo Fornecedor — Ficha de Cadastro"}
-              </DialogTitle>
-            </div>
-            <DialogDescription>
-              {editingFornecedor
-                ? "Atualize as informações de contacto e condições comerciais do fornecedor."
-                : "Cadastre um novo fornecedor para ordens de compra e guias de receção."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="p-6">
-            <FormShell
-              methods={methods}
-              onSubmit={handleFormSubmit}
-              onCancel={() => setIsModalOpen(false)}
-              submitLabel={isSubmitting ? "A guardar..." : "Guardar Fornecedor"}
-            >
+      <FormDialog
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        title={
+          <span className="flex items-center gap-2">
+            <Truck className="w-5 h-5 text-primary" />
+            {editingFornecedor ? `Editar Fornecedor: ${editingFornecedor.nome}` : "Novo Fornecedor — Ficha de Cadastro"}
+          </span>
+        }
+        description={
+          editingFornecedor
+            ? "Atualize as informações de contacto e condições comerciais do fornecedor."
+            : "Cadastre um novo fornecedor para ordens de compra e guias de receção."
+        }
+        bodyClassName="p-0"
+      >
+        <FormShell
+          methods={methods}
+          onSubmit={handleFormSubmit}
+          onCancel={() => setIsModalOpen(false)}
+          submitLabel={isSubmitting ? "A guardar..." : "Guardar Fornecedor"}
+          flush
+          dialogLayout
+        >
               <FormTabs
                 activeTab={subTab}
                 onChange={setSubTab}
@@ -397,6 +392,7 @@ export function FornecedorManager() {
                       { value: "bloqueado", label: "Bloqueado" },
                     ]}
                     span="1"
+                    floating
                   />
                 </FormSection>
               </FormTabPanel>
@@ -416,16 +412,14 @@ export function FornecedorManager() {
                     label="Condição de Pagamento"
                     options={["Pronto pagamento", "15 dias", "30 dias", "60 dias", "90 dias"]}
                     span="1"
+                    floating
                   />
                   <TextField name="iban" label="IBAN / Conta Bancária" placeholder="PT50 0000 0000 0000 0000 0" span="2" />
                   <NumberField name="prazoEntregaDias" label="Prazo Médio de Entrega (dias)" span="1" />
-                  <NumberField name="retencaoFonte" label="Retenção na Fonte (%)" step="0.01" span="1" />
                 </FormSection>
               </FormTabPanel>
-            </FormShell>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </FormShell>
+      </FormDialog>
     </div>
   );
 }
