@@ -130,6 +130,10 @@ export function SearchSelect({
       minWidth: Math.max(rect.width, 240),
       maxWidth: "90vw",
       zIndex: 9999,
+      // O Radix Dialog coloca `pointer-events: none` no body enquanto o modal
+      // está aberto. A lista vive num portal fora do diálogo, por isso precisa
+      // de reactivar os cliques nela.
+      pointerEvents: "auto",
       ...(showAbove
         ? { bottom: viewportHeight - rect.top + 4 }
         : { top: rect.bottom + 4 }),
