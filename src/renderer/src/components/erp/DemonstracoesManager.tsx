@@ -112,6 +112,7 @@ export function DemonstracoesManager() {
   const [exercicios, setExercicios] = useState<Array<{ id: string; ano: string }>>([]);
   const [periodos, setPeriodos] = useState<Array<{ id: string; numero: number; dataInicio: string; dataFim: string }>>([]);
   const periodoAplicadoRef = useRef('');
+  const seedEstruturasRef = useRef(false);
 
   const periodoAtivo = periodos.find((p) => p.id === periodoId) ?? null;
   /** O período selecionado manda no intervalo; datas manuais só após edição explícita. */
@@ -125,15 +126,31 @@ export function DemonstracoesManager() {
   const carregarEstruturas = useCallback(async () => {
     if (!empresaId) return;
     const res = await contabilidadeApi.listarEstruturas(empresaId);
-    if (res.success) setEstruturas(res.data);
-    else toast.error('Erro ao carregar estruturas', { description: res.error.message });
+    if (!res.success) {
+      toast.error('Erro ao carregar estruturas', { description: res.error.message });
+      return;
+    }
+    setEstruturas(res.data);
+
+    if (res.data.length > 0 || seedEstruturasRef.current) return;
+    seedEstruturasRef.current = true;
+
+    const seed = await contabilidadeApi.semear();
+    if (!seed.success) {
+      toast.error('Erro ao criar estruturas padrão', { description: seed.error.message });
+      return;
+    }
+    const novas = await contabilidadeApi.listarEstruturas(empresaId);
+    if (novas.success) setEstruturas(novas.data);
   }, [empresaId]);
 
   const carregarExercicios = useCallback(async () => {
     if (!empresaId) return;
     const res = await contabilidadeApi.listarExercicios(empresaId);
-    if (res.success) setExercicios(res.data.map((e) => ({ id: e.id, ano: e.ano })));
-    else toast.error('Erro ao carregar exercícios', { description: res.error.message });
+    if (res.success) {
+      setExercicios(res.data.map((e) => ({ id: e.id, ano: e.ano })));
+      setExercicioId((atual) => atual || res.data[0]?.id || '');
+    } else toast.error('Erro ao carregar exercícios', { description: res.error.message });
   }, [empresaId]);
 
   const carregarPeriodos = useCallback(async () => {
@@ -223,6 +240,8 @@ export function DemonstracoesManager() {
       } else {
         toast.error('Erro ao gerar demonstração', { description: res.error.message });
       }
+    } catch (error) {
+      toast.error('Erro ao gerar demonstração', { description: (error as Error)?.message });
     } finally {
       setIsLoading(false);
     }
@@ -355,7 +374,7 @@ export function DemonstracoesManager() {
             disabled={isLoading}
           />
         </div>
-        <Button type="button" size="sm" onClick={handleGerarClick} disabled={isLoading || !estruturaSelecionada}>
+        <Button type="button" size="sm" onClick={handleGerarClick} disabled={isLoading || !estruturaSelecionada || !intervalo.inicio || !intervalo.fim}>
           <Calculator className="w-4 h-4" />
           Gerar
         </Button>
