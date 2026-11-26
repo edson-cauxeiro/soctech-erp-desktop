@@ -372,7 +372,7 @@ export class ProformaService {
         resumoIva: calculos.resumoIva,
       },
       documentoOrigem: null,
-      observacoes: `Válida até: ${new Date(proforma.dataValidade).toLocaleDateString('pt-PT')}`,
+      observacoes: `Válida até: ${new Date(proforma.dataValidade).toLocaleDateString('pt-PT')} — Os Preços dos Artigos Poderá Sofrer Alterações Conforme o Cambio do Dia.!`,
       notice: 'Documento Proforma — Não é documento fiscal e não movimenta stock',
       dadosBancarios: empresa.dadosBancarios || null,
       contasBancarias,

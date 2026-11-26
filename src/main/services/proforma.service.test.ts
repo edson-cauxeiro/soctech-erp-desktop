@@ -26,6 +26,9 @@ describe('ProformaService', () => {
         create: vi.fn(),
         update: vi.fn(),
       },
+      contaBancaria: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
       $transaction: vi.fn((cb) => cb(mockPrisma)),
     };
 
@@ -68,6 +71,37 @@ describe('ProformaService', () => {
 
     expect(res.id).toBe('fp-1');
     expect(mockDocNumeroService.reservarNumero).toHaveBeenCalledWith(expect.anything(), 'FP', '2026', 'emp-1');
+  });
+
+  it('inclui aviso de alteração de preços no documento imprimível', async () => {
+    mockPrisma.proformaVenda.findUnique.mockResolvedValue({
+      id: 'fp-1',
+      numero: 'FP 2026/0001',
+      serie: '2026',
+      dataEmissao: new Date('2026-11-26'),
+      dataValidade: new Date('2026-12-31'),
+      estado: 'emitida',
+      empresaId: 'emp-1',
+      clienteNome: 'Cliente 1',
+      clienteNif: '123456789',
+      clienteEndereco: 'Rua A',
+      cliente: { pais: null },
+      linhas: [
+        {
+          artigoId: 'art-1',
+          quantidade: 1,
+          precoUnitario: 100,
+          taxaIva: 14,
+        },
+      ],
+    });
+
+    const doc = await service.getDocumentoImprimivel('fp-1');
+
+    expect(doc.observacoes).toContain('Válida até:');
+    expect(doc.observacoes).toContain(
+      'Os Preços dos Artigos Poderá Sofrer Alterações Conforme o Cambio do Dia.!'
+    );
   });
 
   it('converte proforma emitida em fatura delegando para VendasService', async () => {
