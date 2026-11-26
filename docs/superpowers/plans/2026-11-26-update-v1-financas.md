@@ -1,6 +1,6 @@
 # Update v1 — Finanças Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Corrigir os três problemas de Finanças do `update-v1.md` §1.3 sem alterar contratos IPC, validadores de backend nem os módulos já concluídos.
 
@@ -40,7 +40,7 @@
 - Consumes: `balanceteFiltersSchema`, `razaoFiltersSchema`, `diariosFiltersSchema`, `contaCorrenteFiltersSchema` de `../validators/relatorios.validator`; `ContabilidadeController.empresaDaSessao()` e `com(...)` já existentes.
 - Produces: os quatro métodos continuam a devolver `Promise<IpcResponse<unknown>>`; o serviço `relatorios` recebe filtros com `empresaId` da sessão.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 Criar `contabilidade.controller.relatorios.test.ts`. Reutilizar o helper `criarController` de `contabilidade.controller.lancamentos.test.ts:33-68`, com estes ajustes:
 - `auth.getCurrentSession` devolve uma sessão com `empresaConfigId: 'empresa_1'` e `permissoes: { financas: ['read', 'write'] }`;
@@ -71,12 +71,12 @@ it('devolve VALIDATION_ERROR para filtros inválidos', async () => {
 });
 ```
 
-- [ ] **Step 2: Rodar o teste e confirmar que falha**
+- [x] **Step 2: Rodar o teste e confirmar que falha**
 
 Run: `npx vitest run src/main/controllers/contabilidade.controller.relatorios.test.ts`
 Expected: FAIL — os quatro primeiro casos rejeitam com `ZodError: A empresa é obrigatório.` e o último também não devolve `VALIDATION_ERROR`.
 
-- [ ] **Step 3: Implementar a correcção no controller**
+- [x] **Step 3: Implementar a correcção no controller**
 
 Em `src/main/controllers/contabilidade.controller.ts:545-571`, substituir os quatro métodos por este padrão (um por método, com o schema e descrição correspondentes):
 
@@ -94,12 +94,12 @@ async balancete(filters?: unknown): Promise<IpcResponse<unknown>> {
 
 Aplicar o mesmo a `razao` (`razaoFiltersSchema`, `this.relatorios.razao`), `relatorioDiarios` (`diariosFiltersSchema`, `this.relatorios.diarios`) e `contaCorrente` (`contaCorrenteFiltersSchema`, `this.relatorios.contaCorrente`). Não alterar assinaturas nem chamadores.
 
-- [ ] **Step 4: Rodar o teste e confirmar que passa**
+- [x] **Step 4: Rodar o teste e confirmar que passa**
 
 Run: `npx vitest run src/main/controllers/contabilidade.controller.relatorios.test.ts`
 Expected: PASS (5 testes).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/main/controllers/contabilidade.controller.relatorios.test.ts src/main/controllers/contabilidade.controller.ts
@@ -118,7 +118,7 @@ git commit -m "fix(financas): validate report filters after injecting session co
 - Consumes: `prisma.estruturaRelatorio.findMany`; types `TipoEstruturaRelatorio` e `EstruturaRelatorioDto` já existentes.
 - Produces: `listarEstruturas(empresaId, tipo?)` passa a devolver estruturas com `linhas` ordenadas, compatíveis com o renderer.
 
-- [ ] **Step 1: Actualizar o teste primeiro**
+- [x] **Step 1: Actualizar o teste primeiro**
 
 Em `demonstracoes.service.test.ts:440-460`, trocar o item e o `include` esperado:
 
@@ -134,12 +134,12 @@ const esperado = {
 
 Manter as duas asserções `toHaveBeenNthCalledWith` e o teste `exige empresa ao listar`.
 
-- [ ] **Step 2: Rodar o teste e confirmar que falha**
+- [x] **Step 2: Rodar o teste e confirmar que falha**
 
 Run: `npx vitest run src/main/services/demonstracoes.service.test.ts -t "lista estruturas"`
 Expected: FAIL — o `include` esperado já não é `{ _count: ... }`.
 
-- [ ] **Step 3: Implementar o `include`**
+- [x] **Step 3: Implementar o `include`**
 
 Em `demonstracoes.service.ts:152`, trocar:
 
@@ -155,12 +155,12 @@ include: { linhas: { orderBy: [{ ordem: 'asc' }, { codigo: 'asc' }] } },
 
 Não alterar `where`, `orderBy`, `obterEstrutura` nem outros métodos.
 
-- [ ] **Step 4: Rodar o teste e confirmar que passa**
+- [x] **Step 4: Rodar o teste e confirmar que passa**
 
 Run: `npx vitest run src/main/services/demonstracoes.service.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/main/services/demonstracoes.service.ts src/main/services/demonstracoes.service.test.ts
@@ -178,7 +178,7 @@ git commit -m "fix(financas): return full lines from listarEstruturas"
 - Consumes: `contabilidadeApi.listarEstruturas`, `contabilidadeApi.semear`, `contabilidadeApi.listarExercicios`, `contabilidadeApi.listarPeriodos`, `contabilidadeApi.gerarDemonstracao`; `toast` de `sonner`.
 - Produces: nenhuma interface nova; `DemonstracoesManager` continua com as mesmas props.
 
-- [ ] **Step 1: Seed idempotente quando a lista estiver vazia**
+- [x] **Step 1: Seed idempotente quando a lista estiver vazia**
 
 Em `DemonstracoesManager.tsx`, adicionar `const seedEstruturasRef = useRef(false);` junto de `periodoAplicadoRef` (linha 114). Em `carregarEstruturas` (125-130), depois de `setEstruturas(res.data)` e apenas se `res.data.length === 0 && !seedEstruturasRef.current`:
 1. marcar `seedEstruturasRef.current = true` antes de chamar a API;
@@ -188,7 +188,7 @@ Em `DemonstracoesManager.tsx`, adicionar `const seedEstruturasRef = useRef(false
 
 Não repetir o seed em recarregamentos manuais.
 
-- [ ] **Step 2: Auto-seleccionar o primeiro exercício**
+- [x] **Step 2: Auto-seleccionar o primeiro exercício**
 
 Em `carregarExercicios` (132-137), imediatamente a seguir a `setExercicios(...)`, acrescentar:
 
@@ -198,7 +198,7 @@ setExercicioId((atual) => atual || res.data[0]?.id || '');
 
 O efeito de `carregarPeriodos` (167-169) passa então a carregar períodos; a auto-selecção do primeiro período já existe em 156.
 
-- [ ] **Step 3: Habilitar “Gerar” apenas com intervalo**
+- [x] **Step 3: Habilitar “Gerar” apenas com intervalo**
 
 Em `DemonstracoesManager.tsx:358`, trocar `disabled={isLoading || !estruturaSelecionada}` por:
 
@@ -206,7 +206,7 @@ Em `DemonstracoesManager.tsx:358`, trocar `disabled={isLoading || !estruturaSele
 disabled={isLoading || !estruturaSelecionada || !intervalo.inicio || !intervalo.fim}
 ```
 
-- [ ] **Step 4: Converter falha de IPC em toast**
+- [x] **Step 4: Converter falha de IPC em toast**
 
 Em `gerarDemonstracao` (209-229), manter o `try/finally` actual e acrescentar um `catch` entre eles:
 
@@ -216,7 +216,7 @@ Em `gerarDemonstracao` (209-229), manter o `try/finally` actual e acrescentar um
 } finally {
 ```
 
-- [ ] **Step 5: Verificar na aplicação**
+- [x] **Step 5: Verificar na aplicação**
 
 Run: `npm run typecheck` then `npx electron-vite dev --watch --remoteDebuggingPort 9222`.
 
@@ -228,7 +228,7 @@ Na base de desenvolvimento (sem estruturas), abrir Finanças → Demonstrações
 
 Run: `npx vitest run src/main/services/demonstracoes.service.test.ts src/main/controllers/contabilidade.controller.demonstracoes.test.ts`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/renderer/src/components/erp/DemonstracoesManager.tsx
@@ -249,7 +249,7 @@ git commit -m "fix(financas): seed structures and auto-select exercise in demons
 - Consumes: `useLancamentoDraft` (`form`, `fields`, `append`, `remove`, `totais`, `toPayload`); `LinhasEditor` recebe `form`, `fields`, `append`, `remove`, `contas`, `disabled`.
 - Produces: `linhas` começa em `[]`; `botoesBloqueados` inclui `fields.length < 2`; nenhuma alteração ao payload ou ao validador do backend.
 
-- [ ] **Step 1: Escrever o teste E2E que falha**
+- [x] **Step 1: Escrever o teste E2E que falha**
 
 Criar `tests/e2e/financas-lancamento.e2e.mts` copiando o arranque de `tests/e2e/ui-formularios.e2e.mts:28-46` e `:151-160` (`electron.launch` com `out/main/index.js`, login `admin`/`senha123`).
 
@@ -272,19 +272,19 @@ Teste único:
 6. `await expect(campo).toHaveValue(texto);`
 7. fechar com “Fechar” — sem gravar.
 
-- [ ] **Step 2: Rodar o E2E e confirmar que falha**
+- [x] **Step 2: Rodar o E2E e confirmar que falha**
 
 Run: `npm run build && npx playwright test tests/e2e/financas-lancamento.e2e.mts`
 Expected: FAIL — o texto de estado vazio não existe e/ou “Guardar rascunho” não está desactivado.
 
-- [ ] **Step 3: Inicializar `linhas` vazia**
+- [x] **Step 3: Inicializar `linhas` vazia**
 
 - Em `useLancamentoDraft.ts:133`, trocar a expressão por `linhas: defaults?.linhas ?? []`.
 - Em `LancamentoContabilEditor.tsx:55`, trocar `linhas: [linhaVazia(), linhaVazia()]` por `linhas: []`.
 
 O helper `linhaVazia()` local continua existindo para o `append()`.
 
-- [ ] **Step 4: Ajustar UI de remoção, estado vazio e botões**
+- [x] **Step 4: Ajustar UI de remoção, estado vazio e botões**
 
 - Em `LinhasEditor.tsx:154`, trocar `disabled={disabled || fields.length <= 2}` por `disabled={disabled}`.
 - Em `LinhasEditor.tsx`, entre `erroGeral` (67) e a tabela (69), renderizar quando `fields.length === 0`:
@@ -299,7 +299,7 @@ Manter o botão “Adicionar linha” existente no cabeçalho (61-64) — não c
 
 - Em `LancamentoContabilEditor.tsx:231`, acrescentar `|| fields.length < 2` a `botoesBloqueados`. Assim, “Guardar rascunho” (253) e “Validar” (257) ficam desactivados com menos de 2 linhas.
 
-- [ ] **Step 5: Rodar o E2E e confirmar que passa**
+- [x] **Step 5: Rodar o E2E e confirmar que passa**
 
 Run: `npm run build && npx playwright test tests/e2e/financas-lancamento.e2e.mts`
 Expected: PASS — inclui a escolha de conta por clique numa linha adicionada.
@@ -307,7 +307,7 @@ Expected: PASS — inclui a escolha de conta por clique numa linha adicionada.
 Run: `npx vitest run src/main/validators/lancamento-contabil.validator.test.ts src/main/services/lancamento-contabil.service.test.ts`
 Expected: PASS — mínimo de 2 linhas continua no backend.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add tests/e2e/financas-lancamento.e2e.mts src/renderer/src/hooks/useLancamentoDraft.ts src/renderer/src/components/erp/LancamentoContabilEditor.tsx src/renderer/src/components/erp/LinhasEditor.tsx
@@ -321,12 +321,12 @@ git commit -m "feat(financas): open lancamento with zero lines and cover portal 
 **Files:**
 - Modify: `docs/superpowers/plans/2026-11-26-update-v1-financas.md` (marcar checkboxes e notas)
 
-- [ ] **Step 1: Suíte completa de testes**
+- [x] **Step 1: Suíte completa de testes**
 
 Run: `npm test`
 Expected: PASS, sem novos failures face à baseline. Executar depois do build, nunca em paralelo com ele.
 
-- [ ] **Step 2: Typecheck, build e lint**
+- [x] **Step 2: Typecheck, build e lint**
 
 Run: `npm run typecheck && npm run build`
 Expected: PASS.
@@ -334,18 +334,40 @@ Expected: PASS.
 Run: `npm run lint > C:/Users/HP/AppData/Local/Temp/opencode/financas-lint.txt 2>&1; grep -c ' error ' C:/Users/HP/AppData/Local/Temp/opencode/financas-lint.txt; grep -c ' warning ' C:/Users/HP/AppData/Local/Temp/opencode/financas-lint.txt`
 Expected: `31` e `799` — baseline inalterada.
 
-- [ ] **Step 3: Verificação visual final**
+- [x] **Step 3: Verificação visual final**
 
 Na aplicação, confirmar:
 - Relatórios gera sem toast de falha de comunicação;
 - Demonstração com estruturas, exercício/período pré-seleccionados e dados gerados;
 - Novo lançamento abre sem linhas, permite adicionar/remover e escolher conta em qualquer linha.
 
-- [ ] **Step 4: Actualizar e commitar o plano**
+- [x] **Step 4: Actualizar e commitar o plano**
 
-Marcar todos os `- [ ]` como `- [x]` e acrescentar notas com os commits e os resultados das verificações.
+Todos os passos ficaram marcados como concluídos e as verificações finais estão registadas abaixo.
 
 ```bash
 git add docs/superpowers/plans/2026-11-26-update-v1-financas.md
 git commit -m "docs: close update v1 financas plan"
 ```
+
+## Resultado
+
+**Commits**
+- `4e1c41d` — `fix(financas): validate report filters after injecting session company`
+- `b442bc4` — `fix(financas): return full lines from listarEstruturas`
+- `d68eb55` — `fix(financas): seed structures and auto-select exercise in demonstracoes`
+- `5286dbe` — `feat(financas): open lancamento with zero lines and cover portal select with e2e`
+
+**Verificações**
+- `npm test`: 121 ficheiros, 1242 testes OK (baseline 1237 + 5 novos).
+- `npm run typecheck`: OK.
+- `npm run build`: OK.
+- `npm run lint`: 31 erros e 799 warnings — igual à baseline.
+- `npx playwright test tests/e2e/financas-lancamento.e2e.mts`: 1 teste OK.
+
+**Verificação visual (electron-vite dev + agent-browser)**
+- Finanças → Relatórios: “Gerar” não mostra “Falha ao comunicar com o processo principal.”
+- Finanças → Demonstrações financeiras: base vazia gerou as 4 estruturas padrão; exercício 2026 e Período 1 pré-seleccionados; “Visualizar” gerou o Balanço; recarregar manteve 4 estruturas (seed não repetido).
+- Finanças → Lançamentos contabilísticos → Novo: sem linhas, “Guardar rascunho” desactivado e “Adicionar linha” disponível.
+
+**Desvio documentado:** o helper `linhaVazia` local de `LancamentoContabilEditor` foi removido porque ficou sem uso após `linhas: []`; o `append()` continua a usar o helper de `useLancamentoDraft`. No E2E, o campo da primeira linha é localizado dentro do `role="dialog"` porque a lista de lançamentos também tem `<tbody>` na página.
