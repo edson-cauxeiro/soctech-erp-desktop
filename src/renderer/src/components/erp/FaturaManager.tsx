@@ -42,6 +42,7 @@ import {
   DialogDescription,
 } from "../ui/dialog";
 import { SearchSelect } from "../ui/SearchSelect";
+import { formatCurrency } from "@/utils/currency";
 import { QuantityInput } from "./FormPrimitives";
 import { useAuth } from "../../hooks/useAuth";
 import { toast } from "sonner";
@@ -102,7 +103,6 @@ export function FaturaManager() {
   );
   const [encomendaOrigem, setEncomendaOrigem] = useState("");
   const [motivoIsencao, setMotivoIsencao] = useState("");
-  const [estadoPagamento, setEstadoPagamento] = useState<"pago" | "pendente" | "parcial" | "vencido">("pendente");
   const [meioPagamento, setMeioPagamento] = useState<MeioPagamento>("numerario");
   const [contaBancariaId, setContaBancariaId] = useState("");
   const [contas, setContas] = useState<ContaBancariaComSaldoDto[]>([]);
@@ -492,7 +492,6 @@ export function FaturaManager() {
         motivoIsencao: motivoIsencao.trim() || undefined,
         faturaOrigemId: tipo === "nota_credito" ? faturaOrigemId : undefined,
         motivoNotaCredito: tipo === "nota_credito" ? motivoNotaCredito.trim() : undefined,
-        estadoPagamento,
         meioPagamento: tipo === "fatura_recibo" ? meioPagamento : undefined,
         contaBancariaId: tipo === "fatura_recibo" ? contaBancariaId : undefined,
         dataPagamento: tipo === "fatura_recibo" ? new Date(dataEmissao) : undefined,
@@ -579,9 +578,9 @@ export function FaturaManager() {
 
       {/* MODO 1: FORMULÁRIO DE EMISSÃO */}
       {activeTab === "emitir" && (
-        <form onSubmit={handleEmitirFatura} className="space-y-4">
+        <form onSubmit={handleEmitirFatura} className="space-y-6">
           {/* Secção 1: Configuração do Documento & Armazém de Expedição */}
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-4">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary" />
@@ -615,6 +614,7 @@ export function FaturaManager() {
                   }))}
                   placeholder="Pesquisar armazém..."
                   required
+                  portal
                 />
                 <p className="text-[11px] text-muted-foreground">
                   Por padrão, as vendas saem do Armazém 02 (Vendas). Pode selecionar qualquer outro armazém caso necessário.
@@ -637,6 +637,7 @@ export function FaturaManager() {
                   ]}
                   placeholder="Selecionar tipo..."
                   required
+                  portal
                 />
               </div>
 
@@ -654,6 +655,7 @@ export function FaturaManager() {
                   }))}
                   placeholder="Selecionar série..."
                   required
+                  portal
                 />
                 {series.length === 0 && (
                   <p className="text-[11px] text-destructive">
@@ -689,25 +691,6 @@ export function FaturaManager() {
                 />
               </div>
 
-              {/* Estado Pagamento */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Estado de Pagamento <span className="text-destructive">*</span>
-                </label>
-                <SearchSelect
-                  value={estadoPagamento}
-                  onChange={(val) => setEstadoPagamento(val as any)}
-                  options={[
-                    { value: "pendente", label: "Pendente" },
-                    { value: "pago", label: "Pago" },
-                    { value: "parcial", label: "Parcial" },
-                    { value: "vencido", label: "Vencido" },
-                  ]}
-                  placeholder="Selecionar estado..."
-                  required
-                />
-              </div>
-
               {/* Liquidação: uma Fatura-Recibo afirma que o dinheiro já entrou,
                   por isso tem de dizer como e em que conta. */}
               {tipo === "fatura_recibo" && (
@@ -723,6 +706,7 @@ export function FaturaManager() {
                       placeholder="Como entrou o dinheiro?"
                       required
                       allowClear={false}
+                      portal
                     />
                   </div>
 
@@ -740,6 +724,7 @@ export function FaturaManager() {
                       placeholder={contas.length === 0 ? "Nenhuma conta activa" : "Onde entrou o dinheiro?"}
                       required
                       allowClear={false}
+                      portal
                     />
                     {avisoSessao && (
                       <p className="flex items-start gap-1.5 text-[11px] font-medium text-warning">
@@ -780,10 +765,11 @@ export function FaturaManager() {
                       value: f.id,
                       label: `${f.numero} · ${new Date(f.dataEmissao).toLocaleDateString(
                         "pt-PT"
-                      )} · ${f.totalLiquido.toFixed(2)} €`,
+                      )} · ${formatCurrency(f.totalLiquido, "AOA")}`,
                     }))}
                     placeholder="Selecione primeiro o cliente..."
                     required
+                    portal
                   />
                   {selectedClienteId && faturasCliente.length === 0 && (
                     <p className="text-[11px] text-muted-foreground">
@@ -812,7 +798,7 @@ export function FaturaManager() {
           </div>
 
           {/* Secção 2: Dados do Cliente */}
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-4">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" />
@@ -820,7 +806,7 @@ export function FaturaManager() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
                   Selecionar Cliente <span className="text-destructive">*</span>
@@ -834,6 +820,7 @@ export function FaturaManager() {
                   }))}
                   placeholder="Pesquisar cliente..."
                   required
+                  portal
                 />
               </div>
 
@@ -862,7 +849,7 @@ export function FaturaManager() {
           </div>
 
           {/* Secção 3: Artigos a Faturar com Consulta de Stock por Armazém */}
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-4">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
@@ -889,10 +876,10 @@ export function FaturaManager() {
                     <th className="px-3 py-2.5 min-w-[220px]">Artigo</th>
                     <th className="px-3 py-2.5 w-36 text-center">Stock no Armazém</th>
                     <th className="px-3 py-2.5 w-24">Qtd.</th>
-                    <th className="px-3 py-2.5 w-28">Preço Unit. (€)</th>
+                    <th className="px-3 py-2.5 w-28">Preço Unit. (Kz)</th>
                     <th className="px-3 py-2.5 w-20">Desc. (%)</th>
                     <th className="px-3 py-2.5 w-20">IVA (%)</th>
-                    <th className="px-3 py-2.5 w-28 text-right">Total Linha (€)</th>
+                    <th className="px-3 py-2.5 w-28 text-right">Total Linha (Kz)</th>
                     <th className="px-3 py-2.5 w-10 text-center"></th>
                   </tr>
                 </thead>
@@ -1003,7 +990,7 @@ export function FaturaManager() {
 
                           {/* Total Linha */}
                           <td className="p-2 text-right font-mono text-xs font-semibold">
-                            {totLinha.toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                            {formatCurrency(totLinha, "AOA")}
                           </td>
 
                           {/* Remover */}
@@ -1054,19 +1041,19 @@ export function FaturaManager() {
                   <div className="text-xs text-muted-foreground">
                     Subtotal Ilíquido:{" "}
                     <span className="font-mono font-medium text-foreground">
-                      {subtotalIliquido.toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                      {formatCurrency(subtotalIliquido, "AOA")}
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Total IVA:{" "}
                     <span className="font-mono font-medium text-foreground">
-                      {totalIva.toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                      {formatCurrency(totalIva, "AOA")}
                     </span>
                   </div>
                   <div className="text-sm font-bold text-foreground">
                     Total a Pagar:{" "}
                     <span className="font-mono text-primary text-base">
-                      {totalLiquido.toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                      {formatCurrency(totalLiquido, "AOA")}
                     </span>
                   </div>
                 </div>
@@ -1171,7 +1158,7 @@ export function FaturaManager() {
                         {fat.clienteNif}
                       </td>
                       <td className="px-4 py-3 font-mono font-semibold text-right text-foreground">
-                        {Number(fat.totalLiquido).toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                        {formatCurrency(fat.totalLiquido, "AOA")}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -1300,11 +1287,11 @@ export function FaturaManager() {
                         </td>
                         <td className="p-2 text-right font-mono">{Number(l.quantidade)}</td>
                         <td className="p-2 text-right font-mono">
-                          {Number(l.precoUnitario).toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                          {formatCurrency(l.precoUnitario, "AOA")}
                         </td>
                         <td className="p-2 text-right font-mono">{Number(l.taxaIva)}%</td>
                         <td className="p-2 text-right font-mono font-semibold">
-                          {Number(l.totalLinha).toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                          {formatCurrency(l.totalLinha, "AOA")}
                         </td>
                       </tr>
                     ))}
@@ -1317,19 +1304,19 @@ export function FaturaManager() {
                   <p className="text-muted-foreground">
                     Total Ilíquido:{" "}
                     <span className="font-mono font-medium text-foreground">
-                      {Number(viewingFatura.totalIliquido).toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                      {formatCurrency(viewingFatura.totalIliquido, "AOA")}
                     </span>
                   </p>
                   <p className="text-muted-foreground">
                     Total IVA:{" "}
                     <span className="font-mono font-medium text-foreground">
-                      {Number(viewingFatura.totalIva).toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                      {formatCurrency(viewingFatura.totalIva, "AOA")}
                     </span>
                   </p>
                   <p className="text-sm font-bold text-foreground mt-1">
                     Total Fatura:{" "}
                     <span className="font-mono text-primary text-base">
-                      {Number(viewingFatura.totalLiquido).toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                      {formatCurrency(viewingFatura.totalLiquido, "AOA")}
                     </span>
                   </p>
                 </div>
