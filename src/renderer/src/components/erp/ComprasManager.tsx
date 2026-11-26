@@ -740,16 +740,38 @@ export function ComprasManager() {
       </FormDialog>
 
       {/* Modal: Nova Encomenda a Fornecedor */}
-      <Dialog open={isEncomendaModalOpen} onOpenChange={setIsEncomendaModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto p-0">
-          <DialogHeader className="p-6 border-b border-border bg-muted/10">
-            <div className="flex items-center gap-2">
-              <FilePlus2 className="w-5 h-5 text-primary" />
-              <DialogTitle>Nova Encomenda a Fornecedor</DialogTitle>
-            </div>
-          </DialogHeader>
-
-          <div className="p-6 space-y-4">
+      <FormDialog
+        open={isEncomendaModalOpen}
+        onOpenChange={setIsEncomendaModalOpen}
+        title={
+          <span className="flex items-center gap-2">
+            <FilePlus2 className="w-5 h-5 text-primary" />
+            Nova Encomenda a Fornecedor
+          </span>
+        }
+        bodyClassName="space-y-4"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsEncomendaModalOpen(false)}
+              className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateEncomenda}
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 flex items-center gap-1.5"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              Emitir Encomenda
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1">Fornecedor *</label>
@@ -762,6 +784,7 @@ export function ComprasManager() {
                   }))}
                   placeholder="Pesquisar fornecedor..."
                   required
+                  portal
                 />
               </div>
 
@@ -775,6 +798,7 @@ export function ComprasManager() {
                     label: `${a.codigo} — ${a.designacao}`,
                   }))}
                   placeholder="Pesquisar armazém..."
+                  portal
                 />
               </div>
             </div>
@@ -826,6 +850,7 @@ export function ComprasManager() {
                       placeholder="Pesquisar artigo..."
                       className="min-w-0"
                       required
+                      portal
                     />
 
                     <div className="w-full">
@@ -866,28 +891,8 @@ export function ComprasManager() {
                 ))}
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsEncomendaModalOpen(false)}
-                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateEncomenda}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-sm bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 flex items-center gap-1.5"
-              >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Emitir Encomenda
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FormDialog>
 
       {/* Modal: Nova Fatura de Fornecedor */}
       <Dialog open={isFaturaModalOpen} onOpenChange={setIsFaturaModalOpen}>
