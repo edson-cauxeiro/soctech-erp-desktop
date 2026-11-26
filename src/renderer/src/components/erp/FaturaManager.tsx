@@ -591,7 +591,7 @@ export function FaturaManager() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Armazém de Expedição (Destacando ARM-02 Vendas) */}
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-xs font-semibold text-foreground flex items-center justify-between">
@@ -806,7 +806,7 @@ export function FaturaManager() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
                   Selecionar Cliente <span className="text-destructive">*</span>

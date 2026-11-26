@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Search, ChevronsUpDown, Check, X } from "lucide-react";
+import { shouldCloseOnOutsideClick } from "./search-select-outside";
 
 export interface SearchSelectOption {
   value: string;
@@ -85,8 +86,12 @@ export function SearchSelect({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        shouldCloseOnOutsideClick(
+          event.target,
+          containerRef.current,
+          listRef.current,
+          portal
+        )
       ) {
         setIsOpen(false);
       }
@@ -97,7 +102,7 @@ export function SearchSelect({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, portal]);
 
   // Rola o item destacado para a visualização
   useEffect(() => {
