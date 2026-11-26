@@ -72,7 +72,6 @@ export function ReciboManager() {
   const [valorRecebido, setValorRecebido] = useState(0);
   const [contaBancariaId, setContaBancariaId] = useState("");
   const [contas, setContas] = useState<ContaBancariaComSaldoDto[]>([]);
-  const [retencaoFonte, setRetencaoFonte] = useState(0);
   const [observacoes, setObservacoes] = useState("");
   const [imputacoes, setImputacoes] = useState<ImputacaoForm[]>([]);
 
@@ -247,7 +246,6 @@ export function ReciboManager() {
     setImputacoes([]);
     setCandidatas([]);
     setValorRecebido(0);
-    setRetencaoFonte(0);
     setContaBancariaId("");
     setObservacoes("");
     setData(hojeIso());
@@ -295,7 +293,6 @@ export function ReciboManager() {
         meioPagamento,
         valorRecebido,
         contaBancariaId,
-        retencaoFonte,
         observacoes: observacoes.trim() || null,
         imputacoes: imputacoes
           .filter((i) => i.valor > 0)
@@ -446,8 +443,8 @@ export function ReciboManager() {
       </div>
 
       {activeTab === "emitir" && (
-        <form onSubmit={handleCriar} className="space-y-4">
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-4">
+        <form onSubmit={handleCriar} className="space-y-6">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2 border-b border-border/70 pb-3">
               <Banknote className="w-4 h-4 text-primary" />
               Dados do Recibo
@@ -464,6 +461,7 @@ export function ReciboManager() {
                   options={clientes.map((c) => ({ value: c.id, label: `${c.codigo} - ${c.nome}` }))}
                   placeholder="Pesquisar cliente..."
                   required
+                  portal
                 />
               </div>
 
@@ -477,6 +475,7 @@ export function ReciboManager() {
                   options={series.map((s) => ({ value: s.codigo, label: `${s.codigo} — ${s.descricao}` }))}
                   placeholder="Selecionar série..."
                   required
+                  portal
                 />
               </div>
 
@@ -516,6 +515,7 @@ export function ReciboManager() {
                   placeholder="Selecionar meio de pagamento..."
                   required
                   allowClear={false}
+                  portal
                 />
               </div>
 
@@ -533,6 +533,7 @@ export function ReciboManager() {
                   placeholder={contas.length === 0 ? "Nenhuma conta activa" : "Onde entrou o dinheiro?"}
                   required
                   allowClear={false}
+                  portal
                 />
                 {avisoSessao && (
                   <p className="flex items-start gap-1.5 text-[11px] font-medium text-warning">
@@ -542,18 +543,6 @@ export function ReciboManager() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Retenção na Fonte (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={retencaoFonte || ""}
-                  onChange={(e) => setRetencaoFonte(Number(e.target.value))}
-                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm outline-none focus:border-primary"
-                />
-              </div>
             </div>
 
             {selectedCliente && (
@@ -565,7 +554,7 @@ export function ReciboManager() {
           </div>
 
           {/* Imputações */}
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-3">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
                 Imputação a Faturas
@@ -626,6 +615,7 @@ export function ReciboManager() {
                           label: rotuloFatura(c.fatura),
                         }))}
                         placeholder="Fatura..."
+                        portal
                       />
                       <input
                         type="number"
@@ -900,6 +890,7 @@ export function ReciboManager() {
                           label: rotuloFatura(c.fatura),
                         }))}
                         placeholder="Fatura..."
+                        portal
                       />
                       <input
                         type="number"

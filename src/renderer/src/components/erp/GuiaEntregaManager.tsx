@@ -390,8 +390,8 @@ export function GuiaEntregaManager() {
       </div>
 
       {activeTab === "emitir" && (
-        <form onSubmit={handleCriar} className="space-y-4">
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-4">
+        <form onSubmit={handleCriar} className="space-y-6">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2 border-b border-border/70 pb-3">
               <Truck className="w-4 h-4 text-primary" />
               Dados da Guia e Logística
@@ -408,6 +408,7 @@ export function GuiaEntregaManager() {
                   options={clientes.map((c) => ({ value: c.id, label: `${c.codigo} - ${c.nome}` }))}
                   placeholder="Pesquisar cliente..."
                   required
+                  portal
                 />
               </div>
 
@@ -421,6 +422,7 @@ export function GuiaEntregaManager() {
                   options={series.map((s) => ({ value: s.codigo, label: `${s.codigo} — ${s.descricao}` }))}
                   placeholder="Selecionar série..."
                   required
+                  portal
                 />
               </div>
 
@@ -447,6 +449,7 @@ export function GuiaEntregaManager() {
                   }))}
                   placeholder="Selecionar armazém..."
                   required
+                  portal
                 />
                 <p className="text-[11px] text-muted-foreground">
                   A confirmação da guia dá baixa de stock exactamente uma vez neste armazém.
@@ -497,7 +500,7 @@ export function GuiaEntregaManager() {
           </div>
 
           {/* Linhas */}
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-3">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
                 Mercadorias a Expedir
@@ -779,6 +782,7 @@ export function GuiaEntregaManager() {
                 }))}
                 placeholder="Selecionar série..."
                 required
+                portal
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">

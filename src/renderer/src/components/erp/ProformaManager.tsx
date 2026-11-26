@@ -403,8 +403,8 @@ export function ProformaManager() {
 
       {/* MODO 1: FORMULÁRIO */}
       {activeTab === "emitir" && (
-        <form onSubmit={handleCriar} className="space-y-4">
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-4">
+        <form onSubmit={handleCriar} className="space-y-6">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2 border-b border-border/70 pb-3">
               <FileSignature className="w-4 h-4 text-primary" />
               Dados da Proforma
@@ -421,6 +421,7 @@ export function ProformaManager() {
                   options={clientes.map((c) => ({ value: c.id, label: `${c.codigo} - ${c.nome}` }))}
                   placeholder="Pesquisar cliente..."
                   required
+                  portal
                 />
               </div>
 
@@ -434,6 +435,7 @@ export function ProformaManager() {
                   options={series.map((s) => ({ value: s.codigo, label: `${s.codigo} — ${s.descricao}` }))}
                   placeholder="Selecionar série..."
                   required
+                  portal
                 />
               </div>
 
@@ -493,7 +495,7 @@ export function ProformaManager() {
           </div>
 
           {/* Linhas */}
-          <div className="bg-card border border-border rounded-lg p-5 shadow-xs space-y-3">
+          <div className="bg-card border border-border rounded-lg p-6 shadow-xs space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                 Artigos e Valores
@@ -542,6 +544,7 @@ export function ProformaManager() {
                                 label: `${a.codigo} - ${a.descricao} (${a.unidade})`,
                               }))}
                               placeholder="Artigo..."
+                              portal
                             />
                           </td>
                           <td className="px-2 py-1.5">
@@ -811,6 +814,7 @@ export function ProformaManager() {
                 }))}
                 placeholder="Selecionar série..."
                 required
+                portal
               />
             </div>
 
@@ -829,6 +833,7 @@ export function ProformaManager() {
                     }))}
                     placeholder="Selecionar armazém..."
                     required
+                    portal
                   />
                 </div>
                 <div className="space-y-1.5">
