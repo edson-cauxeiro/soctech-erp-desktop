@@ -11,7 +11,7 @@ Aproximar os formulários de Compras do padrão visual dos formulários de Finan
 
 1. Os 4 diálogos de Compras (Guia de Receção, Encomenda, Fatura de Compra e Fornecedor) passam a usar `FormDialog`, o mesmo componente usado em Finanças: `max-w-6xl`, `w-[95vw]`, `h-[90dvh]`, cabeçalho e rodapé fixos, scroll apenas no corpo.
 2. As listas flutuantes são activadas **apenas nos selects dentro dos diálogos**: 8 `SearchSelect` em `ComprasManager` e 2 `SelectField` em `FornecedorManager` (10 no total). O filtro “Todos os Estados” da lista de fornecedores fica inalterado.
-3. `SelectField` já aceita `floating` (implementado em Vendas) e repassa `portal` ao `SearchSelect`; não é necessária nova prop nem alteração ao `SearchSelect`.
+3. `SelectField` já aceita `floating` (implementado em Vendas) e repassa `portal` ao `SearchSelect`; não é necessária nova prop. Única alteração permitida no `SearchSelect`: reactivar `pointerEvents: "auto"` na lista em portal, porque o Radix Dialog desactiva os ponteiros no `body` enquanto o modal está aberto.
 4. De `retencaoFonte` no Fornecedor remove-se **apenas a interface**. O schema local do formulário, os `defaultValues`, os `reset(...)` e o payload continuam iguais: ao editar, um valor existente é preservado; ao criar, o valor é `0`.
 5. Não há alterações de backend, validadores, DTOs, IPC, Prisma nem migrações.
 
@@ -31,7 +31,7 @@ Alternativa considerada e rejeitada: aumentar apenas o `max-w-3xl` para `max-w-6
 ### Não alterar
 
 - O `SearchSelect` do filtro de estado em `FornecedorManager` (fora do diálogo).
-- `FormDialog.tsx`, `FormPrimitives.tsx`, `SearchSelect.tsx` e `search-select-outside.ts`.
+- `FormDialog.tsx`, `FormPrimitives.tsx` e `search-select-outside.ts`. Em `SearchSelect.tsx`, apenas o `pointerEvents: "auto"` da lista em portal (necessário dentro do `FormDialog`).
 - Lógica de criação, validação local, estados locais e chamadas às APIs de compras e fornecedores.
 - `src/main/validators/fornecedor.validator.ts`, `src/main/services/fornecedor.service.ts`, `src/main/validators/compras.validator.ts`, `src/main/services/compras.service.ts`, DTOs, IPC e `prisma/schema.prisma`.
 - Módulos de Vendas, Finanças, Stock e Comercial.
