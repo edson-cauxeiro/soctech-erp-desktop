@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, XCircle, RefreshCw, Loader2, PackageX, Search, CircleCheck, Boxes, CalendarClock } from "lucide-react";
-import { AlertaStockDto } from "../../@types/electron";
+import { AlertaStockDto, ResumoEstadoStockDto } from "../../@types/electron";
 import { stockApi, StockEstadoFiltersPayload } from "../../api/stock.api";
 import { formatCurrency } from "../../utils/currency";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,15 @@ import { SearchSelect } from "../ui/SearchSelect";
 import { toast } from "sonner";
 
 type FiltroSituacao = "todos" | "alertas";
+
+const RESUMO_VAZIO: ResumoEstadoStockDto = {
+  ruturas: 0,
+  stockBaixo: 0,
+  artigosComLotesCaducados: 0,
+  artigosComLotesProximosCaducar: 0,
+  normais: 0,
+  valorInventario: 0,
+};
 
 const SITUACAO_OPCOES: { value: string; label: string }[] = [
   { value: "rutura", label: "Rutura" },
@@ -32,6 +41,7 @@ function formatQuantidade(valor: number | string | null | undefined): string {
 export function AlertaStockManager() {
   const [linhas, setLinhas] = useState<AlertaStockDto[]>([]);
   const [total, setTotal] = useState(0);
+  const [resumo, setResumo] = useState<ResumoEstadoStockDto>(RESUMO_VAZIO);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtro, setFiltro] = useState<FiltroSituacao>("todos");
@@ -50,12 +60,15 @@ export function AlertaStockManager() {
       if (res.success) {
         setLinhas(res.data.items);
         setTotal(res.data.total);
+        setResumo(res.data.resumo ?? RESUMO_VAZIO);
       } else {
         setLinhas([]);
         setTotal(0);
+        setResumo(RESUMO_VAZIO);
         toast.error("Erro ao carregar o estado de stock: " + res.error.message);
       }
     } catch {
+      setResumo(RESUMO_VAZIO);
       toast.error("Falha ao comunicar com o processo principal.");
     } finally {
       setIsLoading(false);
@@ -67,13 +80,6 @@ export function AlertaStockManager() {
     return () => clearTimeout(timer);
   }, [fetchEstado, search]);
 
-  const totalRuturas = linhas.filter((a) => a.situacao === "rutura").length;
-  const totalStockBaixo = linhas.filter((a) => a.situacao === "stock_baixo").length;
-  const totalProximosCaducar = linhas.filter((a) => a.situacao === "proximo_caducar").length;
-  const totalCaducados = linhas.filter((a) => a.situacao === "caducado").length;
-  const totalNormais = linhas.filter((a) => a.situacao === "normal").length;
-  const valorTotal = linhas.reduce((acc, linha) => acc + Number(linha.valorTotal || 0), 0);
-
   const colunas = 9;
 
   return (
@@ -82,51 +88,57 @@ export function AlertaStockManager() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <KpiCard
           titulo="Ruturas de Stock (Saldo Zero ou Negativo)"
-          valor={`${totalRuturas}`}
-          sufixo={totalRuturas === 1 ? "artigo" : "artigos"}
+          valor={`${resumo.ruturas}`}
+          sufixo={resumo.ruturas === 1 ? "artigo" : "artigos"}
           icon={<XCircle className="w-8 h-8 text-rose-500 opacity-60" />}
           className="bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/40"
           classNameValor="text-rose-700 dark:text-rose-400"
+          testId="kpi-ruturas"
         />
         <KpiCard
           titulo="Abaixo do Stock Mínimo"
-          valor={`${totalStockBaixo}`}
-          sufixo={totalStockBaixo === 1 ? "artigo" : "artigos"}
+          valor={`${resumo.stockBaixo}`}
+          sufixo={resumo.stockBaixo === 1 ? "artigo" : "artigos"}
           icon={<AlertTriangle className="w-8 h-8 text-amber-500 opacity-60" />}
           className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40"
           classNameValor="text-amber-700 dark:text-amber-400"
+          testId="kpi-stock-baixo"
         />
         <KpiCard
-          titulo="Lotes Caducados"
-          valor={`${totalCaducados}`}
-          sufixo={totalCaducados === 1 ? "artigo" : "artigos"}
+          titulo="Artigos com lotes caducados"
+          valor={`${resumo.artigosComLotesCaducados}`}
+          sufixo={resumo.artigosComLotesCaducados === 1 ? "artigo" : "artigos"}
           icon={<CalendarClock className="w-8 h-8 text-orange-600 opacity-60" />}
           className="bg-orange-50/50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800/40"
           classNameValor="text-orange-700 dark:text-orange-400"
+          testId="kpi-caducados"
         />
         <KpiCard
-          titulo="Lotes a Caducar"
-          valor={`${totalProximosCaducar}`}
-          sufixo={totalProximosCaducar === 1 ? "artigo" : "artigos"}
+          titulo="Artigos com lotes a caducar"
+          valor={`${resumo.artigosComLotesProximosCaducar}`}
+          sufixo={resumo.artigosComLotesProximosCaducar === 1 ? "artigo" : "artigos"}
           icon={<CalendarClock className="w-8 h-8 text-sky-500 opacity-60" />}
           className="bg-sky-50/50 dark:bg-sky-950/20 border-sky-200 dark:border-sky-800/40"
           classNameValor="text-sky-700 dark:text-sky-400"
+          testId="kpi-a-caducar"
         />
         <KpiCard
           titulo="Dentro dos Parâmetros"
-          valor={`${totalNormais}`}
-          sufixo={totalNormais === 1 ? "artigo" : "artigos"}
+          valor={`${resumo.normais}`}
+          sufixo={resumo.normais === 1 ? "artigo" : "artigos"}
           icon={<CircleCheck className="w-8 h-8 text-emerald-500 opacity-60" />}
           className="bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40"
           classNameValor="text-emerald-700 dark:text-emerald-400"
+          testId="kpi-normais"
         />
         <KpiCard
-          titulo="Valor de Inventário (Custo Médio)"
-          valor={formatCurrency(valorTotal)}
+          titulo="Valor de Inventário"
+          valor={formatCurrency(resumo.valorInventario)}
           sufixo=""
           icon={<Boxes className="w-8 h-8 text-primary opacity-60" />}
           className="bg-muted/40 border-border"
           classNameValor="text-foreground"
+          testId="kpi-valor-inventario"
         />
       </div>
 
@@ -350,11 +362,12 @@ interface KpiCardProps {
   icon: React.ReactNode;
   className: string;
   classNameValor: string;
+  testId?: string;
 }
 
-function KpiCard({ titulo, valor, sufixo, icon, className, classNameValor }: KpiCardProps) {
+function KpiCard({ titulo, valor, sufixo, icon, className, classNameValor, testId }: KpiCardProps) {
   return (
-    <div className={cn("border p-4 rounded-lg flex items-center justify-between", className)}>
+    <div data-testid={testId} className={cn("border p-4 rounded-lg flex items-center justify-between", className)}>
       <div>
         <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{titulo}</div>
         <div className={cn("text-2xl font-bold mt-1", classNameValor)}>

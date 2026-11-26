@@ -9,6 +9,7 @@ import {
   AlertaStockDto,
   IpcResponse,
   PaginatedResult,
+  ResumoEstadoStockDto,
 } from '../@types/electron';
 
 export interface StockFiltersPayload {
@@ -133,7 +134,9 @@ export const stockApi = {
     };
   },
 
-  async getEstadoStock(filters?: StockEstadoFiltersPayload): Promise<IpcResponse<PaginatedResult<AlertaStockDto>>> {
+  async getEstadoStock(
+    filters?: StockEstadoFiltersPayload,
+  ): Promise<IpcResponse<PaginatedResult<AlertaStockDto> & { resumo: ResumoEstadoStockDto }>> {
     if (typeof window !== 'undefined' && window.api?.stock?.getEstadoStock) {
       return window.api.stock.getEstadoStock(filters);
     }

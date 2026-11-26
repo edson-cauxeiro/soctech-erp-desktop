@@ -146,6 +146,50 @@ test.describe("Loading → dados — Estado de Stock (TASK-034)", () => {
       timeout: TIMEOUT,
     });
   });
+
+  test("mantém os cards globais estáveis com filtros e pesquisa", async () => {
+    await abrirStock();
+    await janela.getByTestId("ribbon-tab-alerta").click();
+
+    await expect(janela.getByText("Estado de Stock por Artigo", { exact: true })).toBeVisible({
+      timeout: TIMEOUT,
+    });
+
+    const ids = [
+      "kpi-ruturas",
+      "kpi-stock-baixo",
+      "kpi-caducados",
+      "kpi-a-caducar",
+      "kpi-normais",
+      "kpi-valor-inventario",
+    ];
+    const lerCards = async () => {
+      const valores: string[] = [];
+      for (const id of ids) valores.push((await janela.getByTestId(id).innerText()).trim());
+      return valores;
+    };
+
+    const iniciais = await lerCards();
+
+    await janela.getByRole("button", { name: "Só alertas" }).click();
+    await expect(janela.getByRole("button", { name: "Só alertas" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    await expect.poll(lerCards).toEqual(iniciais);
+
+    await janela.getByRole("button", { name: "Todos", exact: true }).click();
+    await expect(janela.getByRole("button", { name: "Todos", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+
+    await janela.getByPlaceholder("Pesquisar por código ou descrição...").fill("ART-0001");
+    await expect(janela.getByRole("cell", { name: "ART-0001", exact: true })).toBeVisible({
+      timeout: TIMEOUT,
+    });
+    await expect.poll(lerCards).toEqual(iniciais);
+  });
 });
 
 async function autenticar(pagina: Page): Promise<void> {
