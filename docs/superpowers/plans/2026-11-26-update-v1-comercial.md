@@ -1,6 +1,6 @@
 # Update v1 — Comercial Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Fazer o painel de Arqueação mostrar o apuramento de qualquer sessão seleccionada e permitir o fecho das sessões abertas.
 
@@ -23,7 +23,7 @@
 
 - Sessão fechada com diferença: teste E2E `mostra o apuramento de uma sessão fechada do histórico` exige "Saldo em caixa" e ausência do spinner.
 - Sessão fechada não pode ser fechada: o mesmo teste exige que "Fechar caixa" não apareça.
-- Falha no IPC: teste E2E `mostra erro e permite repetir o apuramento` stuba `apurarSessao`, exige a mensagem e recupera após "Tentar novamente".
+- Falha no IPC: teste E2E `mostra erro e permite repetir o apuramento` stuba o handler IPC `tesouraria:sessoes:apurar` no processo principal (o `window.api` do preload é congelado), exige a mensagem e recupera após "Tentar novamente".
 - Alternância entre sessões: teste E2E `troca de apuramento ao seleccionar outra sessão` exige que o heading mude e o spinner não reapareça.
 - Sessão com zero movimentos: o primeiro teste usa a primeira linha real do histórico (0 movimentos) e exige os quatro cartões numéricos.
 
@@ -40,7 +40,7 @@
 - Consumes: `tesourariaApi.apurarSessao(id: string): Promise<IpcResponse<ApuramentoSessaoDto>>`, `SessaoCaixaDto`, `ApuramentoSessaoDto`.
 - Produces: `carregarApuramento(sessao: SessaoCaixaDto): Promise<void>` (helper local), estado `erroApuramento: string | null`, `data-testid="erro-apuramento"` e `data-testid="tentar-apuramento"`.
 
-- [ ] **Step 1: Escrever os testes E2E de regressão (vermelhos)**
+- [x] **Step 1: Escrever os testes E2E de regressão (vermelhos)**
 
 Em `tests/e2e/sessao-caixa.e2e.mts`, acrescentar um helper ao lado dos existentes e três testes:
 
@@ -65,21 +65,36 @@ test("mostra o apuramento de uma sessão fechada do histórico", async () => {
 
 test("mostra erro e permite repetir o apuramento", async () => {
   await abrirPaginaCaixa();
-  await janela.evaluate(() => {
-    const api = (window as any).api.tesouraria;
-    (window as any).__apurarOriginal = api.apurarSessao;
-    api.apurarSessao = async () => ({
+  await app.evaluate(async ({ ipcMain }) => {
+    const original = (ipcMain as any)._invokeHandlers.get("tesouraria:sessoes:apurar");
+    (globalThis as any).__apurarOriginal = original;
+    ipcMain.removeHandler("tesouraria:sessoes:apurar");
+    ipcMain.handle("tesouraria:sessoes:apurar", async () => ({
       success: false,
       error: { code: "TESTE", message: "Falha simulada no apuramento" },
+    }));
+  });
+  let restaurado = false;
+  const restaurar = async (): Promise<void> => {
+    if (restaurado) return;
+    await app.evaluate(async ({ ipcMain }) => {
+      ipcMain.removeHandler("tesouraria:sessoes:apurar");
+      ipcMain.handle("tesouraria:sessoes:apurar", (globalThis as any).__apurarOriginal);
     });
-  });
-  await janela.locator("table tbody tr").first().click();
-  await expect(janela.getByTestId("erro-apuramento")).toContainText("Falha simulada no apuramento");
-  await janela.evaluate(() => {
-    (window as any).api.tesouraria.apurarSessao = (window as any).__apurarOriginal;
-  });
-  await janela.getByTestId("tentar-apuramento").click();
-  await expect(janela.getByText("Saldo em caixa")).toBeVisible({ timeout: TIMEOUT });
+    restaurado = true;
+  };
+  try {
+    await janela.locator("table tbody tr").first().click();
+    await expect(janela.getByTestId("erro-apuramento")).toContainText(
+      "Falha simulada no apuramento",
+      { timeout: TIMEOUT }
+    );
+    await restaurar();
+    await janela.getByTestId("tentar-apuramento").click();
+    await expect(janela.getByText("Saldo em caixa")).toBeVisible({ timeout: TIMEOUT });
+  } finally {
+    await restaurar();
+  }
 });
 
 test("troca de apuramento ao seleccionar outra sessão", async () => {
@@ -93,12 +108,12 @@ test("troca de apuramento ao seleccionar outra sessão", async () => {
 });
 ```
 
-- [ ] **Step 2: Confirmar que os testes falham**
+- [x] **Step 2: Confirmar que os testes falham**
 
 Run: `npx playwright test tests/e2e/sessao-caixa.e2e.mts -g "apuramento" --reporter=line`
 Expected: FAIL — "Saldo em caixa" não aparece; fica "A carregar apuramento…".
 
-- [ ] **Step 3: Implementar o helper e os estados no renderer**
+- [x] **Step 3: Implementar o helper e os estados no renderer**
 
 Em `SessaoCaixaManager.tsx`:
 - adicionar `const [erroApuramento, setErroApuramento] = useState<string | null>(null);`;
@@ -107,7 +122,7 @@ Em `SessaoCaixaManager.tsx`:
 - `handleActualizar` usa o mesmo helper e mantém `fetchSessoes()`;
 - no painel, renderizar por ordem: `erroApuramento` (com `data-testid="erro-apuramento"`, mensagem e botão `data-testid="tentar-apuramento"` que chama `handleActualizar`), depois `apuramento`, por fim o spinner actual.
 
-- [ ] **Step 4: Confirmar que os testes passam**
+- [x] **Step 4: Confirmar que os testes passam**
 
 Run: `npx playwright test tests/e2e/sessao-caixa.e2e.mts --reporter=line`
 Expected: PASS — todos os testes do ficheiro, incluindo os três novos.
@@ -115,7 +130,7 @@ Expected: PASS — todos os testes do ficheiro, incluindo os três novos.
 Run: `npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/renderer/src/components/erp/SessaoCaixaManager.tsx tests/e2e/sessao-caixa.e2e.mts

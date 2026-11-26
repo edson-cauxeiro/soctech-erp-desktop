@@ -24,6 +24,15 @@ const ADMIN = { login: "admin", senha: "senha123" };
 
 const TIMEOUT = 20_000;
 
+async function abrirPaginaCaixa(): Promise<void> {
+  await janela.locator("#utilizador").fill(ADMIN.login);
+  await janela.getByPlaceholder("••••••••").fill(ADMIN.senha);
+  await janela.getByRole("button", { name: /entrar no sistema/i }).click();
+  await expect(janela.getByRole("link", { name: /inicio|início/i }).first()).toBeVisible({ timeout: TIMEOUT });
+  await janela.getByRole("link", { name: /comercial/i }).first().click();
+  await janela.getByRole("button", { name: /abertura de caixa/i }).click();
+}
+
 let app: ElectronApplication;
 let janela: Page;
 
@@ -93,4 +102,71 @@ test("a tab Contas não volta a mostrar as sessões de caixa", async () => {
   await expect(janela.getByRole("button", { name: "Contas", exact: true })).toBeVisible();
   await expect(janela.getByRole("table")).toBeVisible({ timeout: TIMEOUT });
   await expect(janela.getByRole("heading", { name: /sessões de caixa/i })).toHaveCount(0);
+});
+
+test("mostra o apuramento de uma sessão fechada do histórico", async () => {
+  await abrirPaginaCaixa();
+
+  await janela.locator("table tbody tr").first().click();
+
+  await expect(janela.getByText(/^Arqueação:/)).toBeVisible({ timeout: TIMEOUT });
+  await expect(janela.getByText("Saldo em caixa")).toBeVisible({ timeout: TIMEOUT });
+  await expect(janela.getByText("A carregar apuramento…")).toBeHidden();
+  await expect(janela.getByRole("button", { name: /fechar caixa/i })).toHaveCount(0);
+});
+
+test("mostra erro e permite repetir o apuramento", async () => {
+  await abrirPaginaCaixa();
+
+  // O contexto do preload congela `window.api`, pelo que o stub tem de ser
+  // feito no handler do processo principal. Guardamos o original para o
+  // repor antes de testar o botão "Tentar novamente".
+  await app.evaluate(async ({ ipcMain }) => {
+    const original = (ipcMain as any)._invokeHandlers.get("tesouraria:sessoes:apurar");
+    (globalThis as any).__apurarOriginal = original;
+    ipcMain.removeHandler("tesouraria:sessoes:apurar");
+    ipcMain.handle("tesouraria:sessoes:apurar", async () => ({
+      success: false,
+      error: { code: "TESTE", message: "Falha simulada no apuramento" },
+    }));
+  });
+  let restaurado = false;
+  const restaurar = async (): Promise<void> => {
+    if (restaurado) return;
+    await app.evaluate(async ({ ipcMain }) => {
+      ipcMain.removeHandler("tesouraria:sessoes:apurar");
+      ipcMain.handle("tesouraria:sessoes:apurar", (globalThis as any).__apurarOriginal);
+    });
+    restaurado = true;
+  };
+
+  try {
+    await janela.locator("table tbody tr").first().click();
+
+    await expect(janela.getByTestId("erro-apuramento")).toContainText(
+      "Falha simulada no apuramento",
+      { timeout: TIMEOUT }
+    );
+
+    await restaurar();
+    await janela.getByTestId("tentar-apuramento").click();
+
+    await expect(janela.getByText("Saldo em caixa")).toBeVisible({ timeout: TIMEOUT });
+  } finally {
+    await restaurar();
+  }
+});
+
+test("troca de apuramento ao seleccionar outra sessão", async () => {
+  await abrirPaginaCaixa();
+
+  const linhas = janela.locator("table tbody tr");
+  await linhas.nth(0).click();
+  await expect(janela.getByText("Saldo em caixa")).toBeVisible({ timeout: TIMEOUT });
+  const primeiro = await janela.getByText(/^Arqueação:/).innerText();
+
+  await linhas.nth(1).click();
+
+  await expect(janela.getByText(/^Arqueação:/)).not.toHaveText(primeiro);
+  await expect(janela.getByText("A carregar apuramento…")).toBeHidden();
 });

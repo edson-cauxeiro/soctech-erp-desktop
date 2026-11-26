@@ -77,6 +77,7 @@ export function SessaoCaixaManager() {
 
   const [sessaoActiva, setSessaoActiva] = useState<SessaoCaixaDto | null>(null);
   const [apuramento, setApuramento] = useState<ApuramentoSessaoDto | null>(null);
+  const [erroApuramento, setErroApuramento] = useState<string | null>(null);
   const [fecharAberto, setFecharAberto] = useState(false);
   const [motivoFecho, setMotivoFecho] = useState('');
   // O fecho é contado por meio de pagamento, não por um valor único: o
@@ -133,6 +134,7 @@ export function SessaoCaixaManager() {
         setFundoInicial(0);
         setSessaoActiva(res.data);
         setApuramento(null);
+        setErroApuramento(null);
         fetchSessoes();
       } else {
         toast.error(res.error.message);
@@ -142,22 +144,27 @@ export function SessaoCaixaManager() {
     }
   };
 
-  const handleSelecionar = async (sessao: SessaoCaixaDto) => {
-    setSessaoActiva(sessao);
+  const carregarApuramento = async (sessao: SessaoCaixaDto): Promise<void> => {
     setApuramento(null);
-    if (sessao.estado === 'aberta') {
+    setErroApuramento(null);
+    try {
       const res = await tesourariaApi.apurarSessao(sessao.id);
       if (res.success) setApuramento(res.data);
+      else setErroApuramento(res.error.message);
+    } catch {
+      setErroApuramento('Falha ao comunicar com o processo principal.');
     }
+  };
+
+  const handleSelecionar = async (sessao: SessaoCaixaDto) => {
+    setSessaoActiva(sessao);
+    await carregarApuramento(sessao);
   };
 
   const handleActualizar = async () => {
     if (!sessaoActiva) return;
-    const res = await tesourariaApi.apurarSessao(sessaoActiva.id);
-    if (res.success) {
-      setApuramento(res.data);
-      fetchSessoes();
-    }
+    await carregarApuramento(sessaoActiva);
+    fetchSessoes();
   };
 
   const handleFechar = async () => {
@@ -331,7 +338,19 @@ export function SessaoCaixaManager() {
                 </div>
               </header>
 
-              {apuramento ? (
+              {erroApuramento ? (
+                <div data-testid="erro-apuramento" className="p-4 space-y-3 text-sm">
+                  <p className="font-medium text-destructive">{erroApuramento}</p>
+                  <button
+                    type="button"
+                    data-testid="tentar-apuramento"
+                    onClick={() => void handleActualizar()}
+                    className="h-8 px-3 rounded-md border border-border text-xs font-medium hover:bg-muted"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              ) : apuramento ? (
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
