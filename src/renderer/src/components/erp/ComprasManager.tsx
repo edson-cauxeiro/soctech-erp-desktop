@@ -711,25 +711,6 @@ export function ComprasManager() {
                 ))}
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsGuiaModalOpen(false)}
-                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateGuia}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-sm bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 flex items-center gap-1.5"
-              >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Confirmar Receção & Dar Entrada de Stock
-              </button>
-            </div>
         </div>
       </FormDialog>
 
