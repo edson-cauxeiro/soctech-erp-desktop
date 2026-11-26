@@ -26,12 +26,6 @@ import { comprasApi } from "../../api/compras.api";
 import { fornecedorApi } from "../../api/fornecedor.api";
 import { artigoApi } from "../../api/artigo.api";
 import { armazemApi } from "../../api/armazem.api";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
 import { SearchSelect } from "../ui/SearchSelect";
 import { FormDialog } from "./FormDialog";
 import { getCurrencySymbol } from "../../utils/currency";
@@ -895,16 +889,38 @@ export function ComprasManager() {
       </FormDialog>
 
       {/* Modal: Nova Fatura de Fornecedor */}
-      <Dialog open={isFaturaModalOpen} onOpenChange={setIsFaturaModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto p-0">
-          <DialogHeader className="p-6 border-b border-border bg-muted/10">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              <DialogTitle>Registar Fatura de Fornecedor</DialogTitle>
-            </div>
-          </DialogHeader>
-
-          <div className="p-6 space-y-4">
+      <FormDialog
+        open={isFaturaModalOpen}
+        onOpenChange={setIsFaturaModalOpen}
+        title={
+          <span className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" />
+            Registar Fatura de Fornecedor
+          </span>
+        }
+        bodyClassName="space-y-4"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsFaturaModalOpen(false)}
+              className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateFatura}
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 flex items-center gap-1.5"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              Guardar Fatura de Compra
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1">Fornecedor *</label>
@@ -917,6 +933,7 @@ export function ComprasManager() {
                   }))}
                   placeholder="Pesquisar fornecedor..."
                   required
+                  portal
                 />
               </div>
 
@@ -1000,6 +1017,7 @@ export function ComprasManager() {
                       placeholder="Pesquisar artigo..."
                       className="min-w-0"
                       required
+                      portal
                     />
 
                     <div className="w-full">
@@ -1040,28 +1058,8 @@ export function ComprasManager() {
                 ))}
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsFaturaModalOpen(false)}
-                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateFatura}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-sm bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 flex items-center gap-1.5"
-              >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Guardar Fatura de Compra
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FormDialog>
     </div>
   );
 }
