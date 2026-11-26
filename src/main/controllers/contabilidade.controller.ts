@@ -543,31 +543,43 @@ export class ContabilidadeController {
   // ─── Relatórios ───────────────────────────────────────────────────────────
 
   async balancete(filters?: unknown): Promise<IpcResponse<unknown>> {
-    const f = balanceteFiltersSchema.parse(filters ?? {});
-    return this.com('read', 'gerar balancete', () =>
-      this.relatorios.balancete({ ...f, empresaId: this.auth.getCurrentSession()?.empresaConfigId ?? f.empresaId })
-    );
+    return this.com('read', 'gerar balancete', async () => {
+      const f = balanceteFiltersSchema.parse({
+        ...(filters ?? {}),
+        empresaId: this.empresaDaSessao(),
+      });
+      return this.relatorios.balancete(f);
+    });
   }
 
   async razao(filters?: unknown): Promise<IpcResponse<unknown>> {
-    const f = razaoFiltersSchema.parse(filters ?? {});
-    return this.com('read', 'gerar razão', () =>
-      this.relatorios.razao({ ...f, empresaId: this.auth.getCurrentSession()?.empresaConfigId ?? f.empresaId })
-    );
+    return this.com('read', 'gerar razão', async () => {
+      const f = razaoFiltersSchema.parse({
+        ...(filters ?? {}),
+        empresaId: this.empresaDaSessao(),
+      });
+      return this.relatorios.razao(f);
+    });
   }
 
   async relatorioDiarios(filters?: unknown): Promise<IpcResponse<unknown>> {
-    const f = diariosFiltersSchema.parse(filters ?? {});
-    return this.com('read', 'gerar diários', () =>
-      this.relatorios.diarios({ ...f, empresaId: this.auth.getCurrentSession()?.empresaConfigId ?? f.empresaId })
-    );
+    return this.com('read', 'gerar diários', async () => {
+      const f = diariosFiltersSchema.parse({
+        ...(filters ?? {}),
+        empresaId: this.empresaDaSessao(),
+      });
+      return this.relatorios.diarios(f);
+    });
   }
 
   async contaCorrente(filters?: unknown): Promise<IpcResponse<unknown>> {
-    const f = contaCorrenteFiltersSchema.parse(filters ?? {});
-    return this.com('read', 'gerar conta corrente', () =>
-      this.relatorios.contaCorrente({ ...f, empresaId: this.auth.getCurrentSession()?.empresaConfigId ?? f.empresaId })
-    );
+    return this.com('read', 'gerar conta corrente', async () => {
+      const f = contaCorrenteFiltersSchema.parse({
+        ...(filters ?? {}),
+        empresaId: this.empresaDaSessao(),
+      });
+      return this.relatorios.contaCorrente(f);
+    });
   }
 
   // ─── Fecho de período ─────────────────────────────────────────────────────
