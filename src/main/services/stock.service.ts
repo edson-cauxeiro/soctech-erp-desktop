@@ -77,6 +77,14 @@ export interface ResumoEstadoStock {
   valorInventario: number;
 }
 
+interface SaldoArtigoEstoque {
+  stockAtual: number;
+  valorTotal: number;
+  loteValidadeMaisProxima: Date | null;
+  qtdLotesProximosCaducar: number;
+  qtdLotesCaducados: number;
+}
+
 const RESUMO_VAZIO: ResumoEstadoStock = {
   ruturas: 0,
   stockBaixo: 0,
@@ -738,13 +746,14 @@ export class StockService {
       ? stockEstadoFiltersSchema.parse(rawFilters)
       : { skip: 0, take: 200 };
 
-    // A pesquisa e a paginação passam a ser resolvidas em SQL. Os filtros
-    // `apenasAlertas`/`situacao` dependem do saldo calculado a partir dos
-    // movimentos, pelo que permanecem em memória; nesse caso não se pagina em
-    // SQL, para não devolver uma página já parcialmente filtrada.
+    const agora = new Date();
+    const diasAlerta = await this.obterDiasAlertaValidade(empresaId);
+    const limiteAlerta = new Date(agora);
+    limiteAlerta.setDate(limiteAlerta.getDate() + diasAlerta);
+
+    const whereBase: Prisma.ArtigoWhereInput = { tipo: { not: 'servico' }, estado: 'ativo' };
     const whereArtigos: Prisma.ArtigoWhereInput = {
-      tipo: { not: 'servico' },
-      estado: 'ativo',
+      ...whereBase,
       ...(filtros.search
         ? {
             OR: [
@@ -754,10 +763,14 @@ export class StockService {
           }
         : {}),
     };
-
     const paginarEmSql = !filtros.apenasAlertas && !filtros.situacao;
 
-    const [artigos, total] = await Promise.all([
+    const [artigosGlobais, artigos, total] = await Promise.all([
+      this.prisma.artigo.findMany({
+        where: whereBase,
+        select: { id: true, stockMinimo: true },
+        orderBy: { codigo: 'asc' },
+      }),
       this.prisma.artigo.findMany({
         where: whereArtigos,
         select: {
@@ -778,97 +791,32 @@ export class StockService {
       this.prisma.artigo.count({ where: whereArtigos }),
     ]);
 
-    // Agrega todos os movimentos de uma só vez: duas consultas para a lista inteira, em vez
-    // de duas por artigo. As regras de tipo são as mesmas de getStockTotalArtigo, pelo que as
-    // transferências entre armazéns não afectam o total.
-    const idsArtigos = artigos.map((artigo) => artigo.id);
-
-    const [movimentosEntrada, movimentosSaida, lotesValidade] = await Promise.all([
-      this.prisma.movimentoStock.groupBy({
-        by: ['artigoId'],
-        where: {
-          artigoId: { in: idsArtigos },
-          armazemDestinoId: { not: null },
-          tipo: { in: TIPOS_ENTRADA_TOTAL },
-        },
-        _sum: { quantidade: true },
-      }),
-      this.prisma.movimentoStock.groupBy({
-        by: ['artigoId'],
-        where: {
-          artigoId: { in: idsArtigos },
-          armazemOrigemId: { not: null },
-          tipo: { in: TIPOS_SAIDA_TOTAL },
-        },
-        _sum: { quantidade: true },
-      }),
-      // Busca lotes com data de validade para os artigos da lista
-      this.prisma.lote.findMany({
-        where: {
-          artigoId: { in: idsArtigos },
-          dataValidade: { not: null },
-        },
-        select: {
-          artigoId: true,
-          dataValidade: true,
-        },
-      }),
+    const [saldosGlobais, saldosTabela] = await Promise.all([
+      artigosGlobais.length
+        ? this.carregarSaldosEstoque(artigosGlobais.map((a) => a.id), agora, limiteAlerta)
+        : Promise.resolve(new Map<string, SaldoArtigoEstoque>()),
+      artigos.length
+        ? this.carregarSaldosEstoque(artigos.map((a) => a.id), agora, limiteAlerta)
+        : Promise.resolve(new Map<string, SaldoArtigoEstoque>()),
     ]);
 
-    const entradasPorArtigo = new Map<string, number>(
-      movimentosEntrada.map((grupo) => [grupo.artigoId, Number(grupo._sum.quantidade || 0)])
-    );
-    const saidasPorArtigo = new Map<string, number>(
-      movimentosSaida.map((grupo) => [grupo.artigoId, Number(grupo._sum.quantidade || 0)])
-    );
-
-    // Agrupa lotes por artigo e calcula métricas de validade
-    const agora = new Date();
-    const diasAlerta = await this.obterDiasAlertaValidade(empresaId);
-    const limiteAlerta = new Date(agora);
-    limiteAlerta.setDate(limiteAlerta.getDate() + diasAlerta);
-
-    const lotesPorArtigo = new Map<string, { dataValidade: Date }[]>();
-    for (const lote of lotesValidade) {
-      const arr = lotesPorArtigo.get(lote.artigoId) || [];
-      arr.push({ dataValidade: lote.dataValidade! });
-      lotesPorArtigo.set(lote.artigoId, arr);
+    const resumo: ResumoEstadoStock = { ...RESUMO_VAZIO };
+    for (const artigo of artigosGlobais) {
+      const saldo = saldosGlobais.get(artigo.id);
+      const stockAtual = saldo?.stockAtual ?? 0;
+      const situacao = this.classificarSituacaoStock(stockAtual, Number(artigo.stockMinimo || 0));
+      if (situacao === 'rutura') resumo.ruturas++;
+      else if (situacao === 'stock_baixo') resumo.stockBaixo++;
+      else resumo.normais++;
+      if ((saldo?.qtdLotesCaducados ?? 0) > 0) resumo.artigosComLotesCaducados++;
+      if ((saldo?.qtdLotesProximosCaducar ?? 0) > 0) resumo.artigosComLotesProximosCaducar++;
+      resumo.valorInventario += saldo?.valorTotal ?? 0;
     }
+    resumo.valorInventario = Number(resumo.valorInventario.toFixed(2));
 
     let estado: EstadoArtigoStock[] = artigos.map((artigo) => {
-      const entradas = entradasPorArtigo.get(artigo.id) || 0;
-      const saidas = saidasPorArtigo.get(artigo.id) || 0;
-      const stockAtual = Number((entradas - saidas).toFixed(4));
-      const stockMinimo = Number(artigo.stockMinimo || 0);
-      const pmp = Number(artigo.precoCustoMedio || 0);
-
-      // Calcula métricas de validade dos lotes
-      const lotesArtigo = lotesPorArtigo.get(artigo.id) || [];
-      let loteValidadeMaisProxima: Date | null = null;
-      let qtdLotesProximosCaducar = 0;
-      let qtdLotesCaducados = 0;
-
-      for (const lote of lotesArtigo) {
-        const dataValidade = new Date(lote.dataValidade);
-        if (dataValidade < agora) {
-          qtdLotesCaducados++;
-        } else if (dataValidade <= limiteAlerta) {
-          qtdLotesProximosCaducar++;
-        }
-        if (!loteValidadeMaisProxima || dataValidade < loteValidadeMaisProxima) {
-          loteValidadeMaisProxima = dataValidade;
-        }
-      }
-
-      // Classifica a situação considerando stock e validade
-      const situacaoStock = this.classificarSituacaoStock(stockAtual, stockMinimo);
-      let situacaoFinal: SituacaoStock = situacaoStock;
-      if (qtdLotesCaducados > 0) {
-        situacaoFinal = 'caducado';
-      } else if (qtdLotesProximosCaducar > 0) {
-        situacaoFinal = 'proximo_caducar';
-      }
-
+      const saldo = saldosTabela.get(artigo.id);
+      const stockAtual = Number((saldo?.stockAtual ?? 0).toFixed(4));
       return {
         artigoId: artigo.id,
         codigo: artigo.codigo,
@@ -876,37 +824,67 @@ export class StockService {
         unidade: artigo.unidade,
         estado: artigo.estado,
         stockAtual,
-        stockMinimo,
+        stockMinimo: Number(artigo.stockMinimo || 0),
         stockMaximo: Number(artigo.stockMaximo || 0),
         pontoEncomenda: Number(artigo.pontoEncomenda || 0),
-        precoCustoMedio: pmp,
-        valorTotal: Number((stockAtual * pmp).toFixed(2)),
-        situacao: situacaoFinal,
-        loteValidadeMaisProxima,
-        qtdLotesProximosCaducar,
-        qtdLotesCaducados,
+        precoCustoMedio: Number(artigo.precoCustoMedio || 0),
+        valorTotal: Number((saldo?.valorTotal ?? 0).toFixed(2)),
+        situacao: this.classificarSituacaoStock(stockAtual, Number(artigo.stockMinimo || 0)),
+        loteValidadeMaisProxima: saldo?.loteValidadeMaisProxima ?? null,
+        qtdLotesProximosCaducar: saldo?.qtdLotesProximosCaducar ?? 0,
+        qtdLotesCaducados: saldo?.qtdLotesCaducados ?? 0,
       };
     });
 
-    // Caminho comum (só pesquisa): o resultado já veio paginado do SQL.
-    if (paginarEmSql) {
-      return { items: estado, total, resumo: RESUMO_VAZIO };
-    }
+    if (paginarEmSql) return { items: estado, total, resumo };
 
-    // Filtros dependentes do saldo calculado: aplicam-se em memória. O conjunto
-    // veio completo (sem `skip`/`take` em SQL), pelo que a paginação e o total
-    // mantêm o comportamento anterior.
-    if (filtros.apenasAlertas) {
-      estado = estado.filter((linha) => linha.situacao !== 'normal');
-    }
-    if (filtros.situacao) {
-      estado = estado.filter((linha) => linha.situacao === filtros.situacao);
-    }
+    if (filtros.apenasAlertas) estado = estado.filter((linha) => linha.situacao !== 'normal');
+    if (filtros.situacao) estado = estado.filter((linha) => linha.situacao === filtros.situacao);
 
     const skip = filtros.skip ?? 0;
     const take = filtros.take ?? 200;
+    return { items: estado.slice(skip, skip + take), total: estado.length, resumo };
+  }
 
-    return { items: estado.slice(skip, skip + take), total: estado.length, resumo: RESUMO_VAZIO };
+  private async carregarSaldosEstoque(
+    idsArtigos: string[],
+    agora: Date,
+    limiteAlerta: Date,
+  ): Promise<Map<string, SaldoArtigoEstoque>> {
+    const posicoes = await this.prisma.estoque.findMany({
+      where: { artigoId: { in: idsArtigos } },
+      select: {
+        artigoId: true,
+        quantidade: true,
+        custoUnitario: true,
+        lote: { select: { dataValidade: true } },
+      },
+    });
+
+    const saldos = new Map<string, SaldoArtigoEstoque>();
+    for (const posicao of posicoes) {
+      const saldo: SaldoArtigoEstoque = saldos.get(posicao.artigoId) ?? {
+        stockAtual: 0,
+        valorTotal: 0,
+        loteValidadeMaisProxima: null,
+        qtdLotesProximosCaducar: 0,
+        qtdLotesCaducados: 0,
+      };
+      const quantidade = Number(posicao.quantidade || 0);
+      saldo.stockAtual += quantidade;
+      saldo.valorTotal += quantidade * Number(posicao.custoUnitario || 0);
+
+      const validade = posicao.lote?.dataValidade ? new Date(posicao.lote.dataValidade) : null;
+      if (quantidade > 0 && validade) {
+        if (validade < agora) saldo.qtdLotesCaducados++;
+        else if (validade <= limiteAlerta) saldo.qtdLotesProximosCaducar++;
+        if (!saldo.loteValidadeMaisProxima || validade < saldo.loteValidadeMaisProxima) {
+          saldo.loteValidadeMaisProxima = validade;
+        }
+      }
+      saldos.set(posicao.artigoId, saldo);
+    }
+    return saldos;
   }
 
   /**

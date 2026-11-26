@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StockService } from './stock.service';
+import { StockService, type ResumoEstadoStock } from './stock.service';
 import { BusinessRuleError } from '../utils/errors';
 import { ZodError } from 'zod';
 
@@ -24,6 +24,9 @@ describe('StockService', () => {
         aggregate: vi.fn().mockResolvedValue({ _sum: { quantidade: 0 } }),
         groupBy: vi.fn().mockResolvedValue([]),
         create: vi.fn(),
+      },
+      estoque: {
+        findMany: vi.fn().mockResolvedValue([]),
       },
       artigo: {
         findUnique: vi.fn(),
@@ -577,11 +580,11 @@ describe('StockService', () => {
       );
     };
 
-    /**
-     * Configura o stock por artigo devolvendo as agregações em bulk (groupBy) na ordem
-     * entradas/saídas, para reproduzir o comportamento do serviço sem base de dados.
-     */
-    const mockStockPorArtigo = (entradas: Record<string, number>, saidas: Record<string, number>) => {
+    const mockStockPorArtigo = (
+      entradas: Record<string, number>,
+      saidas: Record<string, number>,
+      posicoesExtras: Record<string, Array<{ quantidade: number; custoUnitario?: number; dataValidade?: string | Date | null }>> = {},
+    ) => {
       mockPrisma.artigo.findMany.mockImplementation(({ where, skip = 0, take }: any) => {
         let lista = filtrarArtigos(where);
         if (take !== undefined) lista = lista.slice(skip, skip + take);
@@ -590,13 +593,25 @@ describe('StockService', () => {
       mockPrisma.artigo.count.mockImplementation(({ where }: any) =>
         Promise.resolve(filtrarArtigos(where).length)
       );
-      mockPrisma.movimentoStock.groupBy
-        .mockResolvedValueOnce(
-          Object.entries(entradas).map(([artigoId, quantidade]) => ({ artigoId, _sum: { quantidade } }))
-        )
-        .mockResolvedValueOnce(
-          Object.entries(saidas).map(([artigoId, quantidade]) => ({ artigoId, _sum: { quantidade } }))
+      mockPrisma.estoque.findMany.mockImplementation(({ where }: any) => {
+        const ids: string[] = where?.artigoId?.in ?? [];
+        return Promise.resolve(
+          ids.flatMap((id) => {
+            const artigo = ARTIGOS.find((a) => a.id === id)!;
+            const extras = posicoesExtras[id];
+            if (extras) {
+              return extras.map((p) => ({
+                artigoId: id,
+                quantidade: p.quantidade,
+                custoUnitario: p.custoUnitario ?? artigo.precoCustoMedio,
+                lote: p.dataValidade ? { dataValidade: new Date(p.dataValidade) } : null,
+              }));
+            }
+            const quantidade = (entradas[id] ?? 0) - (saidas[id] ?? 0);
+            return [{ artigoId: id, quantidade, custoUnitario: artigo.precoCustoMedio, lote: null }];
+          }),
         );
+      });
     };
 
     it('deve devolver o estado de todos os artigos, incluindo os que estão normais', async () => {
@@ -685,24 +700,70 @@ describe('StockService', () => {
       expect(resultado.items[0].codigo).toBe('ART-0002');
     });
 
-    it('deve agregar os movimentos em duas consultas, sem uma por artigo', async () => {
-      mockStockPorArtigo({ 'art-normal': 40, 'art-baixo': 8, 'art-rutura': 6 }, {});
-
-      await service.getEstadoStock();
-
-      // Duas agregações em bulk (entradas e saídas) para a lista inteira, nunca N+1.
-      expect(mockPrisma.movimentoStock.groupBy).toHaveBeenCalledTimes(2);
-      expect(mockPrisma.movimentoStock.aggregate).not.toHaveBeenCalled();
-    });
-
-    it('deve excluir transferências do saldo, por serem neutras no total', async () => {
+    it('deve ler o saldo de estoque sem usar movimentoStock.groupBy', async () => {
       mockStockPorArtigo({ 'art-normal': 40 }, {});
 
       await service.getEstadoStock();
 
-      const [consultaEntradas, consultaSaidas] = mockPrisma.movimentoStock.groupBy.mock.calls;
-      expect(consultaEntradas[0].where.tipo.in).toEqual(['entrada', 'ajuste']);
-      expect(consultaSaidas[0].where.tipo.in).toEqual(['saida', 'consumo_producao', 'ajuste']);
+      // Uma consulta global para o resumo e outra para a página da tabela.
+      expect(mockPrisma.estoque.findMany).toHaveBeenCalledTimes(2);
+      expect(mockPrisma.estoque.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ artigoId: { in: expect.any(Array) } }) })
+      );
+      expect(mockPrisma.movimentoStock.groupBy).not.toHaveBeenCalled();
+    });
+
+    it('deve manter o resumo igual com pesquisa, alertas, situação e paginação', async () => {
+      mockStockPorArtigo({ 'art-normal': 40, 'art-baixo': 8, 'art-rutura': 0 }, {});
+
+      const filtros = [
+        {},
+        { search: 'art-0002' },
+        { apenasAlertas: true },
+        { situacao: 'rutura' as const },
+        { skip: 1, take: 1 },
+      ];
+      const resumos: ResumoEstadoStock[] = [];
+      for (const filtro of filtros) resumos.push((await service.getEstadoStock(filtro)).resumo);
+
+      expect(resumos[0]).toEqual({
+        ruturas: 1,
+        stockBaixo: 1,
+        artigosComLotesCaducados: 0,
+        artigosComLotesProximosCaducar: 0,
+        normais: 1,
+        valorInventario: 600,
+      });
+      for (const resumo of resumos) expect(resumo).toEqual(resumos[0]);
+    });
+
+    it('deve calcular valor por posição e contar artigos com lotes caducados', async () => {
+      mockStockPorArtigo({}, {}, {
+        'art-normal': [
+          { quantidade: 2, custoUnitario: 10 },
+          { quantidade: 3, custoUnitario: 20, dataValidade: '2020-01-01' },
+        ],
+      });
+
+      const { items, resumo } = await service.getEstadoStock();
+
+      expect(items[0].stockAtual).toBe(5);
+      expect(items[0].valorTotal).toBe(80);
+      expect(resumo.artigosComLotesCaducados).toBe(1);
+      expect(resumo.valorInventario).toBe(80);
+    });
+
+    it('não conta lote caducado sem stock e não sobrescreve rutura', async () => {
+      mockStockPorArtigo({ 'art-normal': 40, 'art-baixo': 8 }, {}, {
+        'art-rutura': [{ quantidade: 0, custoUnitario: 5, dataValidade: '2020-01-01' }],
+      });
+
+      const { items, resumo } = await service.getEstadoStock();
+      const artigo = items.find((linha) => linha.artigoId === 'art-rutura');
+
+      expect(artigo?.situacao).toBe('rutura');
+      expect(resumo.ruturas).toBe(1);
+      expect(resumo.artigosComLotesCaducados).toBe(0);
     });
 
     it('deve devolver lista vazia sem artículos, sem falhar', async () => {
