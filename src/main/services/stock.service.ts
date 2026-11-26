@@ -368,7 +368,7 @@ export class StockService {
       // lexicográfica das chaves evita deadlocks em transferências opostas.
       if (data.tipo === 'saida' || data.tipo === 'transferencia' || data.tipo === 'consumo_producao') {
         for (const chave of this.chavesLock({ artigoId: artigo.id, armazemOrigemId, armazemDestinoId })) {
-          await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${chave}, 0));`;
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${chave}, 0));`;
         }
 
         // RN06.1: Bloqueio de Stock Negativo — lido já com a chave trancada.

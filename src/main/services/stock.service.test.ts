@@ -44,7 +44,7 @@ describe('StockService', () => {
       },
       // TASK-037: a sequência e o lock de concorrência são usados dentro da
       // transacção; aqui o `$transaction` passa o próprio mock, por isso estes
-      // campos são acedidos como `tx.sequencia` / `tx.$queryRaw`.
+      // campos são acedidos como `tx.sequencia` / `tx.$executeRaw`.
       sequencia: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         create: vi.fn().mockResolvedValue({}),
@@ -53,7 +53,7 @@ describe('StockService', () => {
       lote: {
         findMany: vi.fn().mockResolvedValue([]),
       },
-      $queryRaw: vi.fn().mockResolvedValue([]),
+      $executeRaw: vi.fn().mockResolvedValue(1),
       $transaction: vi.fn((cb) => cb(mockPrisma)),
     };
 
@@ -189,8 +189,8 @@ describe('StockService', () => {
       });
 
       // O lock foi pedido, e antes da primeira agregação que lê o saldo.
-      expect(mockPrisma.$queryRaw).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      expect(mockPrisma.$executeRaw).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
         mockPrisma.movimentoStock.aggregate.mock.invocationCallOrder[0],
       );
 
