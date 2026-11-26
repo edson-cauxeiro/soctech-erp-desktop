@@ -142,12 +142,12 @@ git commit -m "fix(comercial): load cash session count for closed sessions"
 **Files:**
 - Modify: `docs/superpowers/plans/2026-11-26-update-v1-comercial.md`
 
-- [ ] **Step 1: Correr a suíte completa**
+- [x] **Step 1: Correr a suíte completa**
 
 Run: `npm test`
 Expected: 1245 testes OK.
 
-- [ ] **Step 2: Correr typecheck, build e lint**
+- [x] **Step 2: Correr typecheck, build e lint**
 
 Run: `npm run typecheck && npm run build`
 Expected: PASS.
@@ -155,6 +155,24 @@ Expected: PASS.
 Run: `npm run lint`
 Expected: 31 erros e 799 warnings (baseline inalterada).
 
-- [ ] **Step 3: Fechar o plano**
+- [x] **Step 3: Fechar o plano**
 
 Marcar todos os checkboxes como `[x]` e acrescentar `## Resultado` com os commits, os comandos e o resultado da E2E. Commitar com `docs: close update v1 comercial plan`.
+
+## Resultado
+
+Concluído em 2026-11-26, com execução Native.
+
+**Commits:**
+- `0f74c64` — spec do design do Comercial.
+- `d7f1579` — plano de implementação.
+- `d0c4cdb` — correcção do renderer + E2E de regressão.
+
+**Validação:**
+- `npx playwright test tests/e2e/sessao-caixa.e2e.mts --reporter=line`: 5/5 testes passaram (3 novos: sessão fechada, erro/repetir, troca de sessão).
+- `npm test`: 121 ficheiros / 1245 testes OK.
+- `npm run typecheck`: PASS.
+- `npm run build`: PASS.
+- `npm run lint`: 31 erros e 799 warnings — baseline inalterada.
+
+**Nota de implementação:** o teste de erro stuba o handler `tesouraria:sessoes:apurar` no processo principal, porque o `window.api` exposto por `contextBridge` é congelado e não aceita substituição no renderer. O restauro é feito em `finally` para não contaminar os testes seguintes.
