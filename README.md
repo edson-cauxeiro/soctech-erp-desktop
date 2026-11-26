@@ -1,8 +1,10 @@
-# SocTech-erp-desktop
+# novaerp-desktop
 
-O SocTechno é um sistema ERP de gestão empresarial focado em conformidade fiscal (Angolana), automação comercial, recursos humanos, gestão de inventário e tesouraria.
+An Electron application with React and TypeScript
 
+## Recommended IDE Setup
 
+- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
 ## Project Setup
 
