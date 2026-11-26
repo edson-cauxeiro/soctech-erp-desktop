@@ -72,6 +72,7 @@ function criarController(sessaoActual: UserSession | null) {
       numero: 'INV/0001',
       estado: 'fechado',
     })),
+    getEstadoStock: vi.fn(async () => ({ items: [], total: 0 })),
   };
   const auth = { getCurrentSession: vi.fn(() => sessaoActual) };
   const audit = { registar: vi.fn(async () => {}) };
@@ -204,5 +205,16 @@ describe('StockController.fecharInventario', () => {
         dadosNovos: { estado: 'fechado' },
       }),
     );
+  });
+});
+describe('StockController.getEstadoStock', () => {
+  it('passa a empresa da sessão ao serviço', async () => {
+    const actual = sessao();
+    const { controller, stockService } = criarController(actual);
+
+    const resposta = await controller.getEstadoStock({ search: 'ART-0001' });
+
+    expect(resposta.success).toBe(true);
+    expect(stockService.getEstadoStock).toHaveBeenCalledWith({ search: 'ART-0001' }, actual.empresaConfigId);
   });
 });

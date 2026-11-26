@@ -68,6 +68,24 @@ export interface EstadoArtigoStock {
   qtdLotesCaducados?: number;
 }
 
+export interface ResumoEstadoStock {
+  ruturas: number;
+  stockBaixo: number;
+  artigosComLotesCaducados: number;
+  artigosComLotesProximosCaducar: number;
+  normais: number;
+  valorInventario: number;
+}
+
+const RESUMO_VAZIO: ResumoEstadoStock = {
+  ruturas: 0,
+  stockBaixo: 0,
+  artigosComLotesCaducados: 0,
+  artigosComLotesProximosCaducar: 0,
+  normais: 0,
+  valorInventario: 0,
+};
+
 /**
  * Contexto de quem executa a operação, preenchido pelo controller a partir da
  * sessão — nunca vindo do cliente. `criadoPorId` alimenta a auditoria de stock
@@ -715,7 +733,7 @@ export class StockService {
    * @param rawFilters - Filtros opcionais (`apenasAlertas`, `search`, `situacao`, paginação).
    * @returns Lista paginada do estado de stock por artigo.
    */
-  async getEstadoStock(rawFilters?: unknown): Promise<{ items: EstadoArtigoStock[]; total: number }> {
+  async getEstadoStock(rawFilters?: unknown, empresaId?: string): Promise<{ items: EstadoArtigoStock[]; total: number; resumo: ResumoEstadoStock }> {
     const filtros: StockEstadoFilters = rawFilters
       ? stockEstadoFiltersSchema.parse(rawFilters)
       : { skip: 0, take: 200 };
@@ -806,7 +824,7 @@ export class StockService {
 
     // Agrupa lotes por artigo e calcula métricas de validade
     const agora = new Date();
-    const diasAlerta = await this.obterDiasAlertaValidade();
+    const diasAlerta = await this.obterDiasAlertaValidade(empresaId);
     const limiteAlerta = new Date(agora);
     limiteAlerta.setDate(limiteAlerta.getDate() + diasAlerta);
 
@@ -872,7 +890,7 @@ export class StockService {
 
     // Caminho comum (só pesquisa): o resultado já veio paginado do SQL.
     if (paginarEmSql) {
-      return { items: estado, total };
+      return { items: estado, total, resumo: RESUMO_VAZIO };
     }
 
     // Filtros dependentes do saldo calculado: aplicam-se em memória. O conjunto
@@ -888,7 +906,7 @@ export class StockService {
     const skip = filtros.skip ?? 0;
     const take = filtros.take ?? 200;
 
-    return { items: estado.slice(skip, skip + take), total: estado.length };
+    return { items: estado.slice(skip, skip + take), total: estado.length, resumo: RESUMO_VAZIO };
   }
 
   /**
@@ -897,8 +915,9 @@ export class StockService {
    * @param stockMinimo - Limite mínimo configurado no artigo.
    * @returns 'rutura', 'stock_baixo' ou 'normal'.
    */
-  private async obterDiasAlertaValidade(): Promise<number> {
+  private async obterDiasAlertaValidade(empresaId?: string): Promise<number> {
     const config = await this.prisma.empresaConfig.findFirst({
+      where: empresaId ? { id: empresaId } : undefined,
       select: { diasAlertaValidade: true },
     });
     return config?.diasAlertaValidade ?? 90;

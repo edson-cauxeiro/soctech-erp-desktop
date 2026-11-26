@@ -199,7 +199,7 @@ export class StockController {
       const session = this.auth.getCurrentSession();
       requirePermission(session, 'estoque', 'read');
 
-      const result = await this.stockService.getEstadoStock(filters);
+      const result = await this.stockService.getEstadoStock(filters, session?.empresaConfigId ?? undefined);
       return ok(result);
     } catch (error) {
       if (error instanceof AppError) {

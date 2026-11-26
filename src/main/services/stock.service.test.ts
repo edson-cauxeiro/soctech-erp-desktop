@@ -711,7 +711,18 @@ describe('StockService', () => {
 
       const resultado = await service.getEstadoStock();
 
-      expect(resultado).toEqual({ items: [], total: 0 });
+      expect(resultado).toEqual({
+        items: [],
+        total: 0,
+        resumo: {
+          ruturas: 0,
+          stockBaixo: 0,
+          artigosComLotesCaducados: 0,
+          artigosComLotesProximosCaducar: 0,
+          normais: 0,
+          valorInventario: 0,
+        },
+      });
     });
   });
 

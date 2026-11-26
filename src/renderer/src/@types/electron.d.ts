@@ -1777,6 +1777,15 @@ export interface InventarioContagemDto {
     qtdLotesCaducados?: number;
   }
 
+export interface ResumoEstadoStockDto {
+  ruturas: number;
+  stockBaixo: number;
+  artigosComLotesCaducados: number;
+  artigosComLotesProximosCaducar: number;
+  normais: number;
+  valorInventario: number;
+}
+
 export interface PaginatedResult<T> {
   items: T[];
   total: number;
@@ -4387,7 +4396,7 @@ export interface ErpApi {
       linhas: Array<{ artigoId: string; qtdContada: number; lote?: string }>;
     }) => Promise<IpcResponse<InventarioContagemDto>>;
     fecharInventario: (id: string) => Promise<IpcResponse<InventarioContagemDto>>;
-    getEstadoStock: (filters?: unknown) => Promise<IpcResponse<PaginatedResult<AlertaStockDto>>>;
+    getEstadoStock: (filters?: unknown) => Promise<IpcResponse<PaginatedResult<AlertaStockDto> & { resumo: ResumoEstadoStockDto }>>;
   };
   compras: {
     listEncomendas: (filters?: { fornecedorId?: string; estado?: string; search?: string; skip?: number; take?: number }) => Promise<IpcResponse<PaginatedResult<EncomendaCompraDto>>>;
